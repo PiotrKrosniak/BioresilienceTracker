@@ -4,7 +4,7 @@ const height = window.innerHeight - 100;
 
 // Remove the Google Sheets API configuration and functions
 const SPREADSHEET_ID = '1m-X2TRl5MDlKUA2f5LqsjW0a98hFYujFg8mji-KZemo';
-const API_KEY = 'AIzaSyAzL1yrTphXLIoC8qJWKNTDkw-4SoduHBo';
+const API_KEY = process.env.API_KEY;
 
 // Initialize the map
 function initializeMap() {
