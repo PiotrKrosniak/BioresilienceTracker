@@ -11,18 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-          
-      - name: Install dependencies
-        run: npm install
-        
-      - name: Build
+      - name: Create config file
         env:
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
         run: |
+          mkdir -p public
           echo "window.GOOGLE_SHEETS_API_KEY = '${{ secrets.GOOGLE_SHEETS_API_KEY }}';" > public/config.js
           
       - name: Deploy
