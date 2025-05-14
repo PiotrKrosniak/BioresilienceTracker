@@ -8,18 +8,22 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # ✅ This is critical for pushing to gh-pages
+
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Create config file
         env:
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
         run: |
           mkdir -p public
           echo "window.GOOGLE_SHEETS_API_KEY = '${{ secrets.GOOGLE_SHEETS_API_KEY }}';" > public/config.js
-          
+
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.4
         with:
           branch: gh-pages
-          folder: public 
+          folder: public
