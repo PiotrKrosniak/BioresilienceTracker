@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bioresilience Tracker | Global Biosecurity Accelerator</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="config.js"></script>
+  <script src="map.js"></script>
+  <script src="animalOutbreak.js"></script>
+  <script src="news.js"></script>
+  <script src="ScoreCardData.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+    .map-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #f0f0f0;
+      padding: 2rem;
+      position: relative;
+      margin-bottom: 60px;
+      padding-bottom: 0;
+    }
+    #map {
+      width: 100%;
+      max-width: 1200px;
+      height: 100%;
+      background-color: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .country {
+      fill: #ccc;
+      stroke: #fff;
+      stroke-width: 0.5px;
+    }
+    .country:hover {
+      fill: #3498db;
+      cursor: pointer;
+    }
+    .country.selected {
+      fill: #3498db;
+      stroke: #fff;
+      stroke-width: 1px;
+    }
+    .drawer {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 550px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+      transform: translateX(100%);
+      transition: transform 0.3s ease-in-out;
+      padding: 10px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    .drawer.open {
+      transform: translateX(0);
+    }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .close-button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      padding: 5px;
+      line-height: 1;
+    }
+    .close-button:hover {
+      color: #333;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      background: #f5f5f5;
+    }
+    .tab {
+      flex: 1;
+      padding: 8px 10px;
+      text-align: center;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #666;
+      border-right: 1px solid #e0e0e0;
+      white-space: normal;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+    }
+    .tab:last-child {
+      border-right: none;
+    }
+    .tab:hover {
+      background: #e8e8e8;
+      color: #333;
+    }
+    .tab.active {
+      background: #2c3e50;
+      color: white;
+      font-weight: 600;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .tab-content {
+      display: none;
+      padding: 5px;
+    }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .info-table {
+      margin-top: 20px;
+      margin-bottom: 100px;
+    }
+    .info-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .info-table th, .info-table td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .info-table th {
+      background-color: #f5f5f5;
+      width: 40%;
+    }
+    svg {
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+    .zoom-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 100;
+    }
+    .zoom-button {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background-color 0.2s;
+    }
+    .zoom-button:hover {
+      background-color: #f5f5f5;
+    }
+    .zoom-button:active {
+      background-color: #e0e0e0;
+    }
+
+    /* News Ticker Styles */
+    .news-ticker-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60px;
+      background-color: #1a1a1a;
+      color: white;
+      overflow: hidden;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #cc0000;
+    }
+
+    .news-ticker-label {
+      position: relative;
+      background-color: #cc0000;
+      color: white;
+      padding: 0 20px;
+      font-weight: bold;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      min-width: 140px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .news-ticker-label::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 30px 0 30px 20px;
+      border-color: transparent transparent transparent #cc0000;
+    }
+
+    .news-ticker-label::before {
+      content: '●';
+      display: inline-block;
+      margin-right: 8px;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    #newsTicker {
+      margin-left: 40px;
+      white-space: nowrap;
+      overflow: hidden;
+      flex: 1;
+      padding: 0 20px;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      letter-spacing: 0.2px;
+    }
+
+    .ticker-content {
+      display: inline-block;
+      white-space: nowrap;
+      padding-right: 20px;
+    }
+
+    .ticker-item {
+      display: inline-block;
+      margin-right: 40px;
+      cursor: pointer;
+      transition: color 0.3s;
+      color: white;
+      position: relative;
+    }
+
+    .ticker-item:hover {
+      color: #cc0000;
+    }
+
+    .ticker-item::after {
+      content: '•';
+      position: absolute;
+      right: -25px;
+      color: #cc0000;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .ticker-title {
+      font-weight: 500;
+    }
+
+    .ticker-source {
+      color: #cc0000;
+      font-weight: bold;
+      font-size: 0.9em;
+      text-transform: uppercase;
+    }
+
+    .ticker-separator {
+      display: none;
+    }
+
+    /* Time display */
+    .news-ticker-time {
+      padding: 0 20px;
+      border-left: 1px solid #333;
+      font-size: 14px;
+      color: #999;
+      display: flex;
+      align-items: center;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Adjust map container to account for ticker */
+    .map-container {
+      margin-bottom: 60px;
+      padding-bottom: 0;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(30, 30, 30, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .modal-content {
+      background: #fff;
+      color: #222;
+      max-width: 700px;
+      width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      padding: 2rem 2.5rem 2rem 2.5rem;
+      position: relative;
+      font-family: Arial, sans-serif;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      color: #cc0000;
+      font-size: 1.3rem;
+    }
+    .modal-content h3 {
+      margin-bottom: 0.5rem;
+      color: #2c3e50;
+      font-size: 1rem;
+    }
+    .modal-content p {
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .modal-content ul {
+      margin-top: 0.5rem;
+      padding-left: 1.2rem;
+      font-size: 0.9rem;
+    }
+    .modal-content li {
+      margin-bottom: 0.5rem;
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 18px;
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      color: #888;
+      cursor: pointer;
+      transition: color 0.2s;
+      z-index: 10;
+    }
+    .modal-close:hover {
+      color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Global Bioresilience Tracker</h1>
+  </div>
+  <div class="map-container">
+    <div id="map"></div>
+    <div class="zoom-controls">
+      <button class="zoom-button" id="zoomIn">+</button>
+      <button class="zoom-button" id="zoomOut">-</button>
+    </div>
+  </div>
+
+  <div class="drawer" id="infoDrawer">
+    <div class="drawer-header">
+      <h2 id="countryTitle">Country Info</h2>
+      <button class="close-button" id="closeDrawer">&times;</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="overview">General Info</div>
+      <div class="tab" data-tab="biosecurityExplainer">Biosecurity Explainer</div>
+      <div class="tab" data-tab="biosecurityTracker">Biosecurity Tracker </div>
+      <div class="tab" data-tab="news">Government Updates</div>
+      <div class="tab" data-tab="resources">Helpful Resources</div>
+    </div>
+    <div id="overview" class="tab-content active">
+      <div class="info-table">
+        <table>
+          <tr>
+            <th>Flag</th>
+            <td><img id="countryFlag" style="width: auto; height: 40px; display: none;"></td>
+          </tr>
+          <tr>
+            <th>Capital</th>
+            <td id="capital">-</td>
+          </tr>
+          <tr>
+            <th>Population</th>
+            <td id="population">-</td>
+          </tr>
+          <tr>
+            <th>Area</th>
+            <td id="area">-</td>
+          </tr>
+          <tr>
+            <th>Region</th>
+            <td id="region">-</td>
+          </tr>
+          <tr>
+            <th>Languages</th>
+            <td id="languages">-</td>
+          </tr>
+          <tr>
+            <th>Currencies</th>
+            <td id="currencies">-</td>
+          </tr>
+          <tr>
+            <th>Timezones</th>
+            <td id="timezones">-</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+    <div id="animalOutbreak" class="tab-content">
+      <!-- Existing animal outbreak content -->
+    </div>
+    <div id="news" class="tab-content">
+      <!-- Existing news content -->
+    </div>
+    <div id="biosecurityExplainer" class="tab-content">
+      <div class="info-table">
+        <table>
+            <!-- Rows 1-5 will be added here -->
+        </table>
+    </div>
+    </div>
+    <div id="biosecurityTracker" class="tab-content">
+      <div class="info-table">
+        <table>
+            <!-- Rows 6-11 will be added here -->
+        </table>
+    </div>
+    </div>
+    <div id="resources" class="tab-content">
+      <div class="info-table">
+        <table>
+          <!-- Rows 12 onwards will be added here -->
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- News Ticker -->
+  <div class="news-ticker-container">
+
+    <div id="newsTicker"></div>
+    <div class="news-ticker-time" id="tickerTime"></div>
+  </div>
+
+  <!-- Modal for Global Biosecurity Accelerator: Bioresilience Tracker -->
+  <div id="bioModal" class="modal-overlay" style="display: flex;">
+    <div class="modal-content">
+      <button class="modal-close" id="closeModal">&times;</button>
+      <h2>Global Biosecurity Accelerator: Bioresilience Tracker</h2>
+      <h3>Purpose</h3>
+      <p>We launched the Global Bioresilience Tracker to enhance global transparency of national biosecurity initiatives. By tracking the implementation of national commitments for reducing biological risks and drawing attention to national defense capabilities (technical capabilities, military exercises, and attribution mechanisms) we aim to improve public understanding of the risks and capabilities and create a bioweapons deterrence mechanism. Regular tracker updates will continue to highlight progress while also calling out aspects of biodefense efforts that need to be addressed or accelerated.</p>
+      <h3>Methodology</h3>
+      <p>This tracker is based on a dataset regularly updated by CSR staff, based on publicly available information. Researchers, journalists, academics, government officials, or members of the public are encouraged to contribute to this effort by entering information and sourcing on such incidents here, which CSR uses to supplement its own tracking. The dataset was last updated xx January 2025.</p>
+      <h3>Scope and Definitions</h3>
+      <p>Bioresilience is a concept that focuses on a society's resilience to, or ability to overcome, all biological risks whether arise naturally, an accidental release of hazardous biological material, or a deliberate biological attack. CSR views strong national bioresilience as the successful end state of the deterrence-by-denial approach for biosecurity. Bioresilience consists of four interconnected pillars:</p>
+      <ul>
+        <li><strong>Pillar I: Risk awareness and understanding.</strong> A nation's ability to understand and anticipate the diversity of future biological threats regardless of the origin or target.</li>
+        <li><strong>Pillar II: Early warning and threat detection.</strong> A nation's ability to detect and identify biological threats before they impact the nation or national interests.</li>
+        <li><strong>Pillar III: Prevention and deterrence.</strong> A nation's ability to prevent and deter biological risks from emerging, where possible, and threatening national interests.</li>
+        <li><strong>Pillar IV: Readiness and response.</strong> A nation's ability to respond immediately and effectively to potential biothreats or ongoing biological emergencies whilst building longer-term preparedness and restoring the community, the economy, and the environment after the emergency.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Add modal close script -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('bioModal');
+    var closeBtn = document.getElementById('closeModal');
+    if (closeBtn) {
+      closeBtn.onclick = function() {
+        modal.style.display = 'none';
+      };
+    }
+  });
+  </script>
+</body>
+</html>
