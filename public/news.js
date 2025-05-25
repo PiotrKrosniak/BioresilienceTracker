@@ -16,7 +16,7 @@ function updateTime() {
 // Function to fetch health news
 async function fetchHealthNews() {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/GlobalNewsArticles!A1:G1000?key=${API_KEY}`);
+        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/GlobalNewsArticles!A1:G1000?key=${GOOGLE_MAPS_API_KEY}`);
         const data = await response.json();
         if (data.values && data.values.length > 1) {
             // Header: Title (A), Description (B), URL (C), Source (D), Published Date (E), Country (F), Language (G)
