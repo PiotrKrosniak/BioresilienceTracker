@@ -17,10 +17,15 @@ jobs:
 
       - name: Create config file
         env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
         run: |
           mkdir -p public
-          echo "window.GOOGLE_SHEETS_API_KEY = '${{ secrets.GOOGLE_SHEETS_API_KEY }}';" > public/config.js
+          echo "const config = {
+            GOOGLE_MAPS_API_KEY: '${{ secrets.GOOGLE_MAPS_API_KEY }}',
+            SPREADSHEET_ID: '${{ secrets.SPREADSHEET_ID }}'
+          };" > public/config.js
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.1.4
