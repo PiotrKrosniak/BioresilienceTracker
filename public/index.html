@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bioresilience Tracker | Global Biosecurity Accelerator</title>
+  <title>World Map with Country Info Drawer</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://d3js.org/topojson.v3.min.js"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBO_DjJX7kF9iocqkw_MZJ09nJw_3-IVSw&callback=initializeMap"></script>
   <script src="https://apis.google.com/js/api.js"></script>
-  <script src="config.js"></script>
+
   <script src="map.js"></script>
   <script src="animalOutbreak.js"></script>
   <script src="news.js"></script>
@@ -173,35 +173,7 @@
     svg {
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
-    .zoom-controls {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 100;
-    }
-    .zoom-button {
-      width: 40px;
-      height: 40px;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      transition: background-color 0.2s;
-    }
-    .zoom-button:hover {
-      background-color: #f5f5f5;
-    }
-    .zoom-button:active {
-      background-color: #e0e0e0;
-    }
+  
 
     /* News Ticker Styles */
     .news-ticker-container {
@@ -405,10 +377,6 @@
   </div>
   <div class="map-container">
     <div id="map"></div>
-    <div class="zoom-controls">
-      <button class="zoom-button" id="zoomIn">+</button>
-      <button class="zoom-button" id="zoomOut">-</button>
-    </div>
   </div>
 
   <div class="drawer" id="infoDrawer">
