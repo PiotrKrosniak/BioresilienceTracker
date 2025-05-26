@@ -4,9 +4,9 @@
 const NEWS_SHEET = 'ScoreCards-GBR';
 const NEWS_RANGE = 'A1:C1000'; // ID, Category, Text
 
-async function fetchNewsData(category = null) {
+async function fetchNewsData(category = null, iso = null) {
     try {
-        const response = await fetch(`http://localhost:3000/api/news-data?category=${category || ''}`);
+        const response = await fetch(`http://localhost:3000/api/news-data?category=${category || ''}&iso=${iso || ''}`);
         const data = await response.json();
         return data.rows || [];
     } catch (error) {
@@ -15,34 +15,71 @@ async function fetchNewsData(category = null) {
     }
 }
 
-function renderNewsContent(rows) {
+function renderNewsContent(rows, message = null) {
     if (!rows.length) {
-        return '<div class="no-news">No news available for this category.</div>';
+        return `<div class="no-news">${message || 'No news available for this category.'}</div>`;
     }
 
     let html = '<div class="news-container">';
     rows.forEach(row => {
-        html += `
-            <div class="news-item" data-id="${row[0]}">
-                <div class="news-text">${row[2]}</div>
-            </div>
-        `;
+        // For government updates (from GlobalNewsArticles sheet)
+        if (row.length >= 7) { // GlobalNewsArticles format
+            html += `
+                <div class="news-item" data-id="${row[0]}">
+                    <div class="news-title">${row[0]}</div>
+                    <div class="news-description">${row[1]}</div>
+                    <div class="news-source">${row[3]}</div>
+                    <div class="news-date">${row[4]}</div>
+                </div>
+            `;
+        } else { // ScoreCards format
+            html += `
+                <div class="news-item" data-id="${row[0]}">
+                    <div class="news-text">${row[2]}</div>
+                </div>
+            `;
+        }
     });
     html += '</div>';
     return html;
 }
 
 // Function to update news for a specific category
-async function updateNewsTab(category) {
-    const rows = await fetchNewsData(category);
-    document.getElementById('news').innerHTML = renderNewsContent(rows);
+async function updateNewsTab(iso) {
+    console.log(`Updating government news tab for country: ${iso}`);
+    try {
+        const response = await fetch(`http://localhost:3000/api/country-data?iso=${iso}`);
+        const data = await response.json();
+        
+        if (data.outbreaks && data.outbreaks.length > 0) {
+            let html = '<div class="info-table"><table>';
+            html += '<thead><tr>' +
+                '<th>Date</th>' +
+                '<th>Disease</th>' +
+                '<th>Number of Locations</th>' +
+                '<th>Report Date</th>' +
+                '</tr></thead><tbody>';
+            
+            data.outbreaks.forEach(outbreak => {
+                html += `<tr>
+                    <td>${outbreak.date}</td>
+                    <td>${outbreak.disease}</td>
+                    <td>${outbreak.numberOfLocations}</td>
+                    <td>${outbreak.reportDate}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            document.getElementById('news').innerHTML = html;
+        } else {
+            document.getElementById('news').innerHTML = '<div class="no-news">No outbreak data available for this country.</div>';
+        }
+    } catch (error) {
+        console.error('Error fetching news data:', error);
+        document.getElementById('news').innerHTML = '<div class="no-news">No outbreak data.</div>';
+    }
 }
 
-// Function to update all news
-async function updateAllNews() {
-    const rows = await fetchNewsData();
-    document.getElementById('news').innerHTML = renderNewsContent(rows);
-}
 
 // Fetch and render overview data for the overview tab
 async function fetchOverviewData() {
@@ -154,6 +191,5 @@ async function appendOverviewRowsToTable(iso) {
 
 // Export functions for use in other files
 window.updateNewsTab = updateNewsTab;
-window.updateAllNews = updateAllNews;
 window.updateOverviewTab = updateOverviewTab;
 window.appendOverviewRowsToTable = appendOverviewRowsToTable; 

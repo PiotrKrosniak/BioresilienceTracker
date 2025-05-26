@@ -14,7 +14,7 @@
           throw new Error('No API key received from server');
         }
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initializeMap`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initializeMap&loading=async`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
@@ -29,14 +29,8 @@
       });
   </script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script type="module">
-    import config from './config.js';
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${config.GOOGLE_MAPS_API_KEY}&callback=initializeMap`;
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-  </script>
+  <script src="animalOutbreak.js"></script>
+  <script src="news.js"></script>
   <script src="https://apis.google.com/js/api.js"></script>
 
   <script src="map.js"></script>

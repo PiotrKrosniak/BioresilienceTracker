@@ -22,7 +22,7 @@ app.get('/api/maps-key', (req, res) => {
     res.json({ key: process.env.GOOGLE_MAPS_API_KEY });
 });
 
-// Google Sheets API endpoint
+// Global News Articles
 app.get('/api/news', async (req, res) => {
     if (!process.env.GOOGLE_MAPS_API_KEY || !process.env.SPREADSHEET_ID) {
         console.error('Required environment variables are not set');
@@ -49,109 +49,44 @@ app.get('/api/news', async (req, res) => {
     }
 });
 
-// Country data endpoint
+// Country Government News Data (Animal and Human)
 app.get('/api/country-data', async (req, res) => {
-    if (!process.env.GOOGLE_MAPS_API_KEY || !process.env.SPREADSHEET_ID) {
-        console.error('Required environment variables are not set');
-        return res.status(500).json({ error: 'Server configuration error' });
+    const iso2 = req.query.iso;
+    if (!iso2) {
+        return res.status(400).json({ error: 'ISO2 code is required' });
     }
 
+    console.log(`Fetching data for ISO2 code: ${iso2}`);
+
     try {
-        const countryName = req.query.country;
         const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/Sheet1!A1:Z1000?key=${process.env.GOOGLE_MAPS_API_KEY}`
+            `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/AnimalOutbreakTracker!A1:F1000?key=${process.env.GOOGLE_MAPS_API_KEY}`
         );
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
         const data = await response.json();
-        if (data.values) {
-            // Skip header row
-            const rows = data.values.slice(1);
-            const countryRow = rows.find(row => row[0] === countryName);
-            if (countryRow) {
-                return res.json({
-                    countryIso3: countryRow[1] || '-',
-                    governmentPortal: countryRow[2] || '-',
-                    keywords: countryRow[3] || '-'
-                });
+        
+        if (data && data.values) {
+            // Find all rows matching the ISO2 code in column C
+            const countryRows = data.values.filter(row => row[2] === iso2);
+            
+            if (countryRows.length > 0) {
+                // Map the rows to the expected format
+                const outbreaks = countryRows.map(row => ({
+                    date: row[0] || '-',
+                    disease: row[3] || '-',
+                    numberOfLocations: row[4] || '-',
+                    reportDate: row[5] || '-'
+                }));
+                
+                return res.json({ outbreaks });
             }
         }
         res.json(null);
     } catch (error) {
-        console.error('Error fetching country data:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch country data',
-            details: error.message 
-        });
+        console.error('Error fetching data:', error);
+        res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
 
-// News data endpoint
-app.get('/api/news-data', async (req, res) => {
-    if (!process.env.GOOGLE_MAPS_API_KEY || !process.env.SPREADSHEET_ID) {
-        console.error('Required environment variables are not set');
-        return res.status(500).json({ error: 'Server configuration error' });
-    }
-
-    try {
-        const category = req.query.category;
-        const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/ScoreCards-GBR!A1:C1000?key=${process.env.GOOGLE_MAPS_API_KEY}`
-        );
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.values && data.values.length > 1) {
-            // Skip header row
-            let rows = data.values.slice(1);
-            // Filter by category if specified
-            if (category) {
-                rows = rows.filter(row => row[1] && row[1].toLowerCase() === category.toLowerCase());
-            }
-            return res.json({ rows });
-        }
-        res.json({ rows: [] });
-    } catch (error) {
-        console.error('Error fetching news data:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch news data',
-            details: error.message 
-        });
-    }
-});
-
-// Overview data endpoint
-app.get('/api/overview-data', async (req, res) => {
-    if (!process.env.GOOGLE_MAPS_API_KEY || !process.env.SPREADSHEET_ID) {
-        console.error('Required environment variables are not set');
-        return res.status(500).json({ error: 'Server configuration error' });
-    }
-
-    try {
-        const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/ScoreCards-GBR!A2:C6?key=${process.env.GOOGLE_MAPS_API_KEY}`
-        );
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        res.json({ rows: data.values || [] });
-    } catch (error) {
-        console.error('Error fetching overview data:', error);
-        res.status(500).json({ 
-            error: 'Failed to fetch overview data',
-            details: error.message 
-        });
-    }
-});
 
 // Scorecard data endpoint
 app.get('/api/scorecard-data', async (req, res) => {
@@ -170,7 +105,7 @@ app.get('/api/scorecard-data', async (req, res) => {
         const sheetName = `ScoreCards-${iso.toUpperCase()}`;
         console.log(`Fetching data from sheet: ${sheetName}`);
 
-        // First, try to get the sheet metadata to check if it exists
+        // First check if the country-specific sheet exists
         const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}?key=${process.env.GOOGLE_MAPS_API_KEY}`;
         const metadataResponse = await fetch(metadataUrl);
         
@@ -184,23 +119,10 @@ app.get('/api/scorecard-data', async (req, res) => {
         const sheetExists = metadata.sheets.some(sheet => sheet.properties.title === sheetName);
 
         if (!sheetExists) {
-            console.log(`Sheet ${sheetName} does not exist. Using default GBR sheet.`);
-            // If the country-specific sheet doesn't exist, use the GBR sheet as a fallback
-            const fallbackUrl = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/ScoreCards-GBR!A2:C1000?key=${process.env.GOOGLE_MAPS_API_KEY}`;
-            const fallbackResponse = await fetch(fallbackUrl);
-            
-            if (!fallbackResponse.ok) {
-                const errorText = await fallbackResponse.text();
-                console.error(`Error fetching fallback data: ${fallbackResponse.status}`, errorText);
-                throw new Error(`Error fetching fallback data: ${fallbackResponse.status}`);
-            }
-            
-            const fallbackData = await fallbackResponse.json();
-            console.log(`Successfully fetched ${fallbackData.values?.length || 0} rows from fallback sheet`);
+            console.log(`Sheet ${sheetName} does not exist. No data available.`);
             return res.json({ 
-                rows: fallbackData.values || [],
-                isFallback: true,
-                requestedCountry: iso
+                rows: [],
+                message: `No data available for ${iso}`
             });
         }
 
@@ -225,8 +147,6 @@ app.get('/api/scorecard-data', async (req, res) => {
         console.log(`Successfully fetched ${data.values.length} rows from ${sheetName}`);
         res.json({ 
             rows: data.values,
-            isFallback: false,
-            requestedCountry: iso
         });
     } catch (error) {
         console.error('Error fetching scorecard data:', error);

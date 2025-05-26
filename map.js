@@ -392,6 +392,11 @@ async function handleCountryClick(event, d) {
             if (countryData.cca3 && window.appendOverviewRowsToTable) {
                 window.appendOverviewRowsToTable(countryData.cca3);
             }
+
+            // Update news tab with country-specific data
+            if (countryData.cca2 && window.updateNewsTab) {
+                window.updateNewsTab(countryData.cca2);
+            }
         }
     } catch (error) {
         console.error('Error fetching country data:', error);
