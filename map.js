@@ -411,7 +411,7 @@ async function handleCountryClick(event, d) {
 // Function to fetch data from Google Sheets
 async function fetchCountryData(countryName) {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A1:Z1000?key=${GOOGLE_MAPS_API_KEY}`);
+        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${config.SPREADSHEET_ID}/values/Sheet1!A1:Z1000?key=${config.GOOGLE_MAPS_API_KEY}`);
         const data = await response.json();
         
         if (data.values) {
