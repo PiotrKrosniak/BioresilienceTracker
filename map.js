@@ -388,10 +388,6 @@ async function handleCountryClick(event, d) {
                 $('#countryFlag').hide();
             }
 
-            // Update animal outbreak tab using ISO2 code
-            if (countryData.cca2) {
-                window.updateAnimalOutbreakTab(countryData.cca2);
-            }
             // Update overview table with score card rows using ISO3 code
             if (countryData.cca3 && window.appendOverviewRowsToTable) {
                 window.appendOverviewRowsToTable(countryData.cca3);
@@ -411,20 +407,15 @@ async function handleCountryClick(event, d) {
 // Function to fetch data from Google Sheets
 async function fetchCountryData(countryName) {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${config.SPREADSHEET_ID}/values/Sheet1!A1:Z1000?key=${config.GOOGLE_MAPS_API_KEY}`);
+        const response = await fetch(`http://localhost:3000/api/country-data?country=${encodeURIComponent(countryName)}`);
         const data = await response.json();
         
-        if (data.values) {
-            // Skip header row
-            const rows = data.values.slice(1);
-            const countryRow = rows.find(row => row[0] === countryName);
-            if (countryRow) {
-                return {
-                    countryIso3: countryRow[1] || '-',
-                    governmentPortal: countryRow[2] || '-',
-                    keywords: countryRow[3] || '-'
-                };
-            }
+        if (data) {
+            return {
+                countryIso3: data.countryIso3 || '-',
+                governmentPortal: data.governmentPortal || '-',
+                keywords: data.keywords || '-'
+            };
         }
         return null;
     } catch (error) {

@@ -6,18 +6,9 @@ const NEWS_RANGE = 'A1:C1000'; // ID, Category, Text
 
 async function fetchNewsData(category = null) {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${NEWS_SHEET}!${NEWS_RANGE}?key=${API_KEY}`);
+        const response = await fetch(`http://localhost:3000/api/news-data?category=${category || ''}`);
         const data = await response.json();
-        
-        if (data.values && data.values.length > 1) {
-            // Skip header row
-            const rows = data.values.slice(1);
-            // Filter by category if specified
-            return category ? 
-                rows.filter(row => row[1] && row[1].toLowerCase() === category.toLowerCase()) :
-                rows;
-        }
-        return [];
+        return data.rows || [];
     } catch (error) {
         console.error('Error fetching news data:', error);
         return [];
@@ -53,17 +44,12 @@ async function updateAllNews() {
     document.getElementById('news').innerHTML = renderNewsContent(rows);
 }
 
-// Fetch and render overview data for the overview tab (rows 2-6)
-const OVERVIEW_RANGE = 'A2:C6'; // Rows 2-6, columns A-C
-
+// Fetch and render overview data for the overview tab
 async function fetchOverviewData() {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${NEWS_SHEET}!${OVERVIEW_RANGE}?key=${API_KEY}`);
+        const response = await fetch('http://localhost:3000/api/overview-data');
         const data = await response.json();
-        if (data.values && data.values.length) {
-            return data.values;
-        }
-        return [];
+        return data.rows || [];
     } catch (error) {
         console.error('Error fetching overview data:', error);
         return [];
@@ -87,44 +73,19 @@ function renderOverviewTab(rows) {
     return html;
 }
 
-// Usage: call this when a country is selected (e.g., GBR)
+// Usage: call this when a country is selected
 async function updateOverviewTab() {
     const rows = await fetchOverviewData();
     document.getElementById('overview').innerHTML = renderOverviewTab(rows);
 }
 
-// Fetch overview rows for the selected ISO
-const OVERVIEW_RANGE_ISO = 'A2:D1000'; // A: ID, B: Category, C: Text, D: ISO
-
-async function fetchOverviewRows(iso) {
-    try {
-        const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${NEWS_SHEET}!${OVERVIEW_RANGE_ISO}?key=${API_KEY}`
-        );
-        const data = await response.json();
-        if (data.values && data.values.length) {
-            // Filter rows by ISO (case-insensitive)
-            return data.values.filter(row => row[3] && row[3].toUpperCase() === iso.toUpperCase());
-        }
-        return [];
-    } catch (error) {
-        console.error('Error fetching overview data:', error);
-        return [];
-    }
-}
-
 // Append overview rows to the overview table
 async function appendOverviewRowsToTable(iso) {
-    // Dynamically set the sheet name for the country
-    const sheetName = `ScoreCards-${iso.toUpperCase()}`;
-    const range = 'A2:C1000'; // Adjust if you have more columns/rows
     try {
-        const response = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${sheetName}!${range}?key=${API_KEY}`
-        );
+        const response = await fetch(`http://localhost:3000/api/scorecard-data?iso=${iso}`);
         const data = await response.json();
-        const rows = (data.values && data.values.length) ? data.values : [];
-        console.log('Appending rows for sheet:', sheetName, rows); // Debug
+        const rows = data.rows || [];
+        console.log('Appending rows for ISO:', iso, rows); // Debug
 
         // Split rows into different sections
         const biosecurityExplainerRows = rows.slice(0, 5); // Rows 1-5
@@ -161,6 +122,8 @@ async function appendOverviewRowsToTable(iso) {
                 th.textContent = row[1].replace(/\n/g, ' ');
                 const td = document.createElement('td');
                 td.innerHTML = row[2].replace(/\n/g, '<br>');
+                tr.appendChild(th);
+                tr.appendChild(td);
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityTrackerTable.appendChild(tr);
