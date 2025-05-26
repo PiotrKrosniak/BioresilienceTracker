@@ -2,10 +2,6 @@
 const width = window.innerWidth;
 const height = window.innerHeight - 100;
 
-// Google API configuration
-
-const SPREADSHEET_ID = '1m-X2TRl5MDlKUA2f5LqsjW0a98hFYujFg8mji-KZemo';
-
 // Google Maps styling
 const mapStyle = [
   {
