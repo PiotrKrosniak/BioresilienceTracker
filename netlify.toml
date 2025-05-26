@@ -1,6 +1,6 @@
 [build]
   publish = "/"
-  command = ""
+  command = "node build.js"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -8,4 +8,8 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200
+
+[context.production.environment]
+  GOOGLE_MAPS_API_KEY = ""
+  SPREADSHEET_ID = "" 
