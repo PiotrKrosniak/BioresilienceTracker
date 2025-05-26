@@ -18,7 +18,7 @@ function updateTime() {
 // Function to fetch health news
 async function fetchHealthNews() {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${config.SPREADSHEET_ID}/values/GlobalNewsArticles!A1:G1000?key=${config.GOOGLE_MAPS_API_KEY}`);
+        const response = await fetch('http://localhost:3000/api/news');
         const data = await response.json();
         if (data.values && data.values.length > 1) {
             // Header: Title (A), Description (B), URL (C), Source (D), Published Date (E), Country (F), Language (G)
@@ -30,7 +30,7 @@ async function fetchHealthNews() {
             updateTicker();
         }
     } catch (error) {
-        console.error('Error fetching news from Google Sheets:', error);
+        console.error('Error fetching news from server:', error);
         newsItems = [];
         updateTicker();
     }

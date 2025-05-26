@@ -6,9 +6,17 @@
   <title>Global Bioresilience Tracker</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    // Load environment variables
-    window.GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
-    window.SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID';
+    // Fetch API key from backend
+    fetch('http://localhost:3000/api/maps-key')
+      .then(response => response.json())
+      .then(data => {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initializeMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      })
+      .catch(error => console.error('Error loading Google Maps:', error));
   </script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script type="module">
