@@ -1,3 +1,5 @@
+import config from './config.js';
+
 const TICKER_SPEED = 30; // pixels per second - slower for better readability
 let currentPosition = 0;
 let newsItems = [];
