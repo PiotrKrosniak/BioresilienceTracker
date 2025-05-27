@@ -206,7 +206,7 @@ let countriesLayer = null;
 let infoWindow = null;
 
 // Initialize the map
-window.initializeMap = function () {
+function initializeMap() {
     console.log('initializeMap function called');
     
     if (!google || !google.maps) {
@@ -291,86 +291,91 @@ window.initializeMap = function () {
                 console.error('Error adding GeoJSON to map:', error);
             }
 
-            // Add mouseover event
-            countriesLayer.addListener('mouseover', async (event) => {
-                const countryId = event.feature.getId();
-                const countryName = event.feature.getProperty('name');
-                
-                // Skip if no valid country ID
-                if (!countryId) return;
-
-                try {
-                    // Fetch country data
-                    const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryId}`);
-                    const [countryData] = await response.json();
-                    
-                    if (countryData) {
-                        // Format population with commas
-                        const formattedPopulation = countryData.population.toLocaleString();
-                        
-                        // Format area with commas and km²
-                        const formattedArea = countryData.area ? `${countryData.area.toLocaleString()} km²` : '-';
-                        
-                        // Get capital(s)
-                        const capital = countryData.capital ? countryData.capital.join(', ') : '-';
-
-                        // Create InfoWindow content with pie chart container
-                        const content = `
-                            <div style="padding: 5px; min-width: 150px; min-height: 150px;">
-                                <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${countryName}</h3>
-                                <div id="infographic-${countryId}" style="width: 150px; height: 150px; margin: 10px auto;"></div>
-                            </div>
-                        `;
-
-                        // Get the center of the country's geometry
-                        const bounds = new google.maps.LatLngBounds();
-                        event.feature.getGeometry().forEachLatLng(latLng => bounds.extend(latLng));
-                        const center = bounds.getCenter();
-
-                        // Show InfoWindow
-                        infoWindow.setContent(content);
-                        infoWindow.setPosition(center);
-                        infoWindow.open(map);
-
-                        // Create pie chart data
-                        const pieData = [
-                            { name: 'Population', value: countryData.population },
-                            { name: 'Area', value: countryData.area },
-                            { name: 'Languages', value: Object.keys(countryData.languages || {}).length }
-                        ];
-
-                        // Create pie chart after InfoWindow is shown
-                        setTimeout(() => {
-                            createPieChart(pieData, `pieChart-${countryId}`);
-                            createInfographic(`infographic-${countryId}`);
-                        }, 100);
-                    }
-                } catch (error) {
-                    console.error('Error fetching country data:', error);
-                }
-            });
-
-            // Add mouseout event
-            countriesLayer.addListener('mouseout', (event) => {
-                infoWindow.close();
-            });
-
-            // Add click event
-            countriesLayer.addListener('click', (event) => {
-                const countryId = event.feature.getId();
-                // Skip if no valid country ID
-                if (!countryId) return;
-                
-                handleCountryClick(null, { 
-                    properties: { 
-                        iso3: countryId 
-                    } 
-                });
-            });
+            // Add event listeners
+            addMapEventListeners();
         })
         .catch(error => {
             console.error('Error loading GeoJSON:', error);
         });
+}
+
+// Add event listeners to the map
+function addMapEventListeners() {
+    // Add mouseover event
+    countriesLayer.addListener('mouseover', async (event) => {
+        const countryId = event.feature.getId();
+        const countryName = event.feature.getProperty('name');
+        
+        // Skip if no valid country ID
+        if (!countryId) return;
+
+        try {
+            // Fetch country data
+            const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryId}`);
+            const [countryData] = await response.json();
+            
+            if (countryData) {
+                // Format population with commas
+                const formattedPopulation = countryData.population.toLocaleString();
+                
+                // Format area with commas and km²
+                const formattedArea = countryData.area ? `${countryData.area.toLocaleString()} km²` : '-';
+                
+                // Get capital(s)
+                const capital = countryData.capital ? countryData.capital.join(', ') : '-';
+
+                // Create InfoWindow content with pie chart container
+                const content = `
+                    <div style="padding: 5px; min-width: 150px; min-height: 150px;">
+                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${countryName}</h3>
+                        <div id="infographic-${countryId}" style="width: 150px; height: 150px; margin: 10px auto;"></div>
+                    </div>
+                `;
+
+                // Get the center of the country's geometry
+                const bounds = new google.maps.LatLngBounds();
+                event.feature.getGeometry().forEachLatLng(latLng => bounds.extend(latLng));
+                const center = bounds.getCenter();
+
+                // Show InfoWindow
+                infoWindow.setContent(content);
+                infoWindow.setPosition(center);
+                infoWindow.open(map);
+
+                // Create pie chart data
+                const pieData = [
+                    { name: 'Population', value: countryData.population },
+                    { name: 'Area', value: countryData.area },
+                    { name: 'Languages', value: Object.keys(countryData.languages || {}).length }
+                ];
+
+                // Create pie chart after InfoWindow is shown
+                setTimeout(() => {
+                    createPieChart(pieData, `pieChart-${countryId}`);
+                    createInfographic(`infographic-${countryId}`);
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Error fetching country data:', error);
+        }
+    });
+
+    // Add mouseout event
+    countriesLayer.addListener('mouseout', (event) => {
+        infoWindow.close();
+    });
+
+    // Add click event
+    countriesLayer.addListener('click', (event) => {
+        const countryId = event.feature.getId();
+        if (!countryId) return;
+        
+        handleCountryClick(null, { 
+            properties: { 
+                iso3: countryId 
+            } 
+        });
+    });
 }
 
 // Handle country click event
@@ -498,37 +503,6 @@ window.onload = function() {
     initializeTabs();
     initializeDrawer();
 };
-
-// Make initializeMap available globally
-window.initializeMap = function() {
-    if (typeof google === 'undefined' || !google.maps) {
-        console.error('Google Maps API not loaded');
-        return;
-    }
-
-    const mapContainer = document.getElementById('map');
-    if (!mapContainer) {
-        console.error('Map container not found');
-        return;
-    }
-
-    mapContainer.style.width = '100%';
-    mapContainer.style.height = '100%';
-
-    map = new google.maps.Map(mapContainer, {
-        center: { lat: 20, lng: 0 },
-        zoom: 2,
-        styles: mapStyle,
-        disableDefaultUI: true,
-        zoomControl: true,
-        mapTypeControl: true,
-        mapTypeControlOptions: {
-            mapTypeIds: ['roadmap', 'hybrid']
-        }
-    });
-
-    // Rest of the existing initializeMap code...
-}
 
 function createPieChart(data, containerId) {
     const width = 150;

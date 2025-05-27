@@ -13,27 +13,48 @@
   <script src="ScoreCardData.js"></script>
   <script>
     // Load Google Maps API with key from server
-    fetch('/.netlify/functions/get-maps-key')
-      .then(response => response.json())
-      .then(data => {
-        if (!data.key) throw new Error('No API key received');
+    function loadGoogleMapsAPI() {
+        fetch('/.netlify/functions/get-maps-key')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.key) throw new Error('No API key received');
 
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places&callback=initializeMap`;
-        script.async = true;
-        script.defer = true;
-        script.onerror = function() {
-          console.error('Error loading Google Maps script');
-        };
-        document.head.appendChild(script);
-      })
-      .catch(error => {
-        console.error('Error loading Google Maps:', error);
-        const mapDiv = document.getElementById('map');
-        if (mapDiv) {
-          mapDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Error loading map. Please try refreshing the page.</div>';
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places&callback=initApplication`;
+                script.async = true;
+                script.defer = true;
+                script.onerror = function() {
+                    console.error('Error loading Google Maps script');
+                };
+                document.head.appendChild(script);
+            })
+            .catch(error => {
+                console.error('Error loading Google Maps:', error);
+                const mapDiv = document.getElementById('map');
+                if (mapDiv) {
+                    mapDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Error loading map. Please try refreshing the page.</div>';
+                }
+            });
+    }
+
+    // Initialize everything when the page loads
+    window.initApplication = function() {
+        console.log('Initializing application...');
+        if (typeof google === 'undefined' || !google.maps) {
+            console.error('Google Maps API not loaded');
+            return;
         }
-      });
+        
+        // Initialize map
+        initializeMap();
+        
+        // Initialize other components
+        initializeTabs();
+        initializeDrawer();
+    };
+
+    // Start loading the API when the page loads
+    document.addEventListener('DOMContentLoaded', loadGoogleMapsAPI);
 
     // Add global error handler for Google Maps
     window.gm_authFailure = function() {
