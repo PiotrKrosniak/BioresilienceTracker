@@ -276,7 +276,7 @@ function initializeMap() {
                 map: map,
                 style: {
                     fillColor: '#4285F4',
-                    fillOpacity: 0.5,
+                    fillOpacity: 0,
                     strokeColor: 'black',
                     strokeWeight: 1
                 }
