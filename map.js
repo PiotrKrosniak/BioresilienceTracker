@@ -1,6 +1,6 @@
 // Map configuration
-const width = window.innerWidth;
-const height = window.innerHeight - 100;
+const mapWidth = window.innerWidth;
+const mapHeight = window.innerHeight - 100;
 
 // Google Maps styling
 const mapStyle = [
@@ -579,8 +579,8 @@ function createPieChart(data, containerId) {
 }
 
 function createInfographic(containerId) {
-    const width = 300;
-    const height = 300;
+    const infographicWidth = 300;
+    const infographicHeight = 300;
     const radius = 80;
     const labelOffset = 120;
 
@@ -593,10 +593,10 @@ function createInfographic(containerId) {
 
     const svg = d3.select(`#${containerId}`)
         .append("svg")
-        .attr("viewBox", [0, 0, width, height]);
+        .attr("viewBox", [0, 0, infographicWidth, infographicHeight]);
 
     const g = svg.append("g")
-        .attr("transform", `translate(${width / 2}, ${height / 2})`);
+        .attr("transform", `translate(${infographicWidth / 2}, ${infographicHeight / 2})`);
 
     const pie = d3.pie()
         .value(1)
