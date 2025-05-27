@@ -241,8 +241,15 @@ function initializeMap() {
 
     // Load local GeoJSON data
     fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('GeoJSON data loaded successfully:', data);
+            
             // Filter out Antarctica
             const filteredData = {
                 ...data,
@@ -258,13 +265,20 @@ function initializeMap() {
             // Add GeoJSON layer
             countriesLayer = new google.maps.Data();
             countriesLayer.setMap(map);
-            countriesLayer.addGeoJson(filteredData);
+            
+            try {
+                countriesLayer.addGeoJson(filteredData);
+                console.log('GeoJSON layer added successfully');
+            } catch (error) {
+                console.error('Error adding GeoJSON to map:', error);
+            }
 
             // Style the countries
             countriesLayer.setStyle({
-                fillOpacity: 0.5,         // fully transparent
-                strokeColor: 'black',   // optional border color
-                strokeWeight: 1         // set to 0 if you don't want borders either
+                fillColor: '#4285F4',  // Add a fill color
+                fillOpacity: 0.5,      // Make it semi-transparent
+                strokeColor: 'black',  // Border color
+                strokeWeight: 1        // Border width
             });
 
             // Add mouseover event
@@ -344,7 +358,9 @@ function initializeMap() {
                 });
             });
         })
-        .catch(error => console.error('Error loading GeoJSON:', error));
+        .catch(error => {
+            console.error('Error loading GeoJSON:', error);
+        });
 }
 
 // Handle country click event
