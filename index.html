@@ -14,9 +14,17 @@
           throw new Error('No API key received from server');
         }
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initializeMap&loading=async`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}`;
         script.async = true;
         script.defer = true;
+        script.onload = () => {
+          // Initialize map after script is loaded
+          if (typeof initializeMap === 'function') {
+            initializeMap();
+          } else {
+            console.error('initializeMap function not found');
+          }
+        };
         document.head.appendChild(script);
       })
       .catch(error => {

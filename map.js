@@ -207,7 +207,17 @@ let infoWindow = null;
 
 // Initialize the map
 function initializeMap() {
+    if (!google || !google.maps) {
+        console.error('Google Maps API not loaded');
+        return;
+    }
+
     const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
+
     mapContainer.style.width = '100%';
     mapContainer.style.height = '100%';
 
