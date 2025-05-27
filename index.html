@@ -7,7 +7,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
     // Load Google Maps API with key from server
-    fetch('http://localhost:3000/api/maps-key')
+    fetch('/.netlify/functions/get-maps-key')
       .then(response => response.json())
       .then(data => {
         if (!data.key) {

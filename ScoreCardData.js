@@ -84,7 +84,7 @@ async function updateNewsTab(iso) {
 // Fetch and render overview data for the overview tab
 async function fetchOverviewData() {
     try {
-        const response = await fetch('http://localhost:3000/api/overview-data');
+        const response = await fetch('/.netlify/functions/get-overview-data');
         const data = await response.json();
         return data.rows || [];
     } catch (error) {
