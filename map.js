@@ -206,7 +206,7 @@ let countriesLayer = null;
 let infoWindow = null;
 
 // Initialize the map
-function initializeMap() {
+window.initializeMap = function () {
     console.log('initializeMap function called');
     
     if (!google || !google.maps) {
