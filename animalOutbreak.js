@@ -1,18 +1,12 @@
 // animalOutbreak.js
 // Fetch and display animal outbreak data for the selected country in the 'Biosecurity Thread Detection' tab
 
-const ANIMAL_OUTBREAK_SHEET = 'AnimalOutbreakTracker';
-const ANIMAL_OUTBREAK_RANGE = 'A1:F1000'; // Date, ISO3, ISO2, Deasese, NumberOfLocations, ReportDates
-
 async function fetchAnimalOutbreaks(iso2) {
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${ANIMAL_OUTBREAK_SHEET}!${ANIMAL_OUTBREAK_RANGE}?key=${API_KEY}`);
+        const response = await fetch(`/.netlify/functions/get-country-data?iso=${iso2}`);
         const data = await response.json();
-        if (data.values && data.values.length > 1) {
-            // Header: Date, ISO3, ISO2, Deasese, NumberOfLocations, ReportDates
-            const rows = data.values.slice(1);
-            // Filter by ISO2
-            return rows.filter(row => row[2] && row[2].toUpperCase() === iso2.toUpperCase());
+        if (data && data.outbreaks) {
+            return data.outbreaks;
         }
         return [];
     } catch (error) {
@@ -33,9 +27,9 @@ function renderAnimalOutbreaksTable(rows) {
         '</tr></thead><tbody>';
     rows.forEach((row, i) => {
         html += `<tr style="background:${i%2===0?'#fff':'#fafafa'};">` +
-            `<td style="border:1px solid #ddd;padding:10px;text-align:left;">${row[3]}</td>` +
-            `<td style="border:1px solid #ddd;padding:10px;text-align:left;">${row[4]}</td>` +
-            `<td style="border:1px solid #ddd;padding:10px;text-align:left;">${row[5]}</td>` +
+            `<td style="border:1px solid #ddd;padding:10px;text-align:left;">${row.disease}</td>` +
+            `<td style="border:1px solid #ddd;padding:10px;text-align:left;">${row.numberOfLocations}</td>` +
+            `<td style="border:1px solid #ddd;padding:10px;text-align:left;">${row.reportDate}</td>` +
         '</tr>';
     });
     html += '</tbody></table></div>';
