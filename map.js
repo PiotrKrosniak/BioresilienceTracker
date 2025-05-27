@@ -481,10 +481,41 @@ function initializeDrawer() {
 
 // Initialize everything when the page loads
 window.onload = function() {
-    initializeMap();
+    // Remove map initialization from here since it's handled by the script onload
     initializeTabs();
     initializeDrawer();
 };
+
+// Make initializeMap available globally
+window.initializeMap = function() {
+    if (typeof google === 'undefined' || !google.maps) {
+        console.error('Google Maps API not loaded');
+        return;
+    }
+
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
+
+    mapContainer.style.width = '100%';
+    mapContainer.style.height = '100%';
+
+    map = new google.maps.Map(mapContainer, {
+        center: { lat: 20, lng: 0 },
+        zoom: 2,
+        styles: mapStyle,
+        disableDefaultUI: true,
+        zoomControl: true,
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+            mapTypeIds: ['roadmap', 'hybrid']
+        }
+    });
+
+    // Rest of the existing initializeMap code...
+}
 
 function createPieChart(data, containerId) {
     const width = 150;
