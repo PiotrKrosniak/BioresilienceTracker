@@ -415,8 +415,11 @@ async function handleCountryClick(event, d) {
         $('#countryFlag').hide();
     }
     
-    // Show the drawer
-    $('#infoDrawer').addClass('open');
+    // Show the drawer using classList instead of jQuery
+    const drawer = document.getElementById('infoDrawer');
+    if (drawer) {
+        drawer.classList.add('open');
+    }
 }
 
 // Function to fetch data from Google Sheets
@@ -452,7 +455,6 @@ function initializeTabs() {
 // Initialize drawer close functionality
 function initializeDrawer() {
     const closeDrawerBtn = document.getElementById('closeDrawer');
-    const expandDrawerBtn = document.getElementById('expandDrawer');
     const drawer = document.getElementById('infoDrawer');
 
     if (closeDrawerBtn) {
@@ -462,21 +464,6 @@ function initializeDrawer() {
             }
         });
     }
-
-    if (expandDrawerBtn && drawer) {
-        expandDrawerBtn.addEventListener('click', () => {
-            drawer.classList.toggle('expanded');
-            expandDrawerBtn.classList.toggle('expanded');
-        });
-    }
-
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('#infoDrawer, #map').length || $(e.target).is('#closeDrawer')) {
-            if (drawer) {
-                drawer.classList.remove('open');
-            }
-        }
-    });
 }
 
 // Initialize everything when the page loads
