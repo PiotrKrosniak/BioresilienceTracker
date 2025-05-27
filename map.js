@@ -264,7 +264,7 @@ function initializeMap() {
             countriesLayer.setStyle({
                 fillOpacity: 0,         // fully transparent
                 strokeColor: 'white',   // optional border color
-                strokeWeight: 0         // set to 0 if you don't want borders either
+                strokeWeight: 1         // set to 0 if you don't want borders either
             });
 
             // Add mouseover event
