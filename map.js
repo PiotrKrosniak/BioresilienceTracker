@@ -206,7 +206,7 @@ let countriesLayer = null;
 let infoWindow = null;
 
 // Initialize the map
-window.initializeMap = function() {
+window.onload = function() {
     const mapContainer = document.getElementById('map');
     mapContainer.style.width = '100%';
     mapContainer.style.height = '100%';
