@@ -262,8 +262,8 @@ function initializeMap() {
 
             // Style the countries
             countriesLayer.setStyle({
-                fillOpacity: 0,         // fully transparent
-                strokeColor: 'white',   // optional border color
+                fillOpacity: 0.5,         // fully transparent
+                strokeColor: 'black',   // optional border color
                 strokeWeight: 1         // set to 0 if you don't want borders either
             });
 
