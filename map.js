@@ -425,7 +425,7 @@ async function handleCountryClick(event, d) {
 // Function to fetch data from Google Sheets
 async function fetchCountryData(countryName) {
     try {
-        const response = await fetch(`http://localhost:3000/api/country-data?country=${encodeURIComponent(countryName)}`);
+        const response = await fetch(`/.netlify/functions/country-data?country=${encodeURIComponent(countryName)}`);
         const data = await response.json();
         
         if (data) {
