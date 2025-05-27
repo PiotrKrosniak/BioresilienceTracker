@@ -11,44 +11,19 @@
   <script src="https://apis.google.com/js/api.js"></script>
   <script src="map.js"></script>
   <script src="ScoreCardData.js"></script>
+  <script src="map.js"></script>
   <script>
-    // Load Google Maps API with key from server
     fetch('/.netlify/functions/get-maps-key')
       .then(response => response.json())
       .then(data => {
-        if (!data.key) {
-          throw new Error('No API key received from server');
-        }
-  
-        // ✅ Define and append script *inside* this scope
+        if (!data.key) throw new Error('No API key received');
+
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places`;
-        script.async = true;
-        script.defer = true;
-  
-        // ✅ Manually call initializeMap after script loads
-        script.onload = function () {
-          if (typeof initializeMap === 'function') {
-            initializeMap();
-          } else {
-            console.error('initializeMap is not defined');
-          }
-        };
-  
-        script.onerror = function () {
-          console.error('Error loading Google Maps script');
-        };
-  
-        document.head.appendChild(script); // ✅ Append here
-      })
-      .catch(error => {
-        console.error('Error loading Google Maps:', error);
-        const mapDiv = document.getElementById('map');
-        if (mapDiv) {
-          mapDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Error loading map. Please try refreshing the page.</div>';
-        }
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}`;
+        document.head.appendChild(script);
       });
   </script>
+
   
   <script type="module" src="news.js"></script>
   <style>
