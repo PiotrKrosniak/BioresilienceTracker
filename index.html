@@ -19,14 +19,14 @@
         if (!data.key) {
           throw new Error('No API key received from server');
         }
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places&callback=initializeMap`;
-        script.async = true;
-        script.defer = true;
-        script.onerror = function() {
-          console.error('Error loading Google Maps script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}`;
+        script.onload = function () {
+          if (typeof initializeMap === 'function') {
+            initializeMap();
+          } else {
+            console.error('initializeMap is not defined');
+          }
         };
-        document.head.appendChild(script);
       })
       .catch(error => {
         console.error('Error loading Google Maps:', error);

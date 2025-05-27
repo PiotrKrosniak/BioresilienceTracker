@@ -3,3 +3,5 @@ index2.html
 .env
 .local
 node_modules/
+# Local Netlify folder
+.netlify
