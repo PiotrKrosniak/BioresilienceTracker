@@ -6,7 +6,7 @@ const NEWS_RANGE = 'A1:C1000'; // ID, Category, Text
 
 async function fetchNewsData(category = null, iso = null) {
     try {
-        const response = await fetch(`http://localhost:3000/api/news-data?category=${category || ''}&iso=${iso || ''}`);
+        const response = await fetch(`/.netlify/functions/get-news-data?category=${category || ''}&iso=${iso || ''}`);
         const data = await response.json();
         return data.rows || [];
     } catch (error) {
@@ -48,7 +48,7 @@ function renderNewsContent(rows, message = null) {
 async function updateNewsTab(iso) {
     console.log(`Updating government news tab for country: ${iso}`);
     try {
-        const response = await fetch(`http://localhost:3000/api/country-data?iso=${iso}`);
+        const response = await fetch(`/.netlify/functions/get-country-data?iso=${iso}`);
         const data = await response.json();
         
         if (data.outbreaks && data.outbreaks.length > 0) {
@@ -119,7 +119,7 @@ async function updateOverviewTab() {
 // Append overview rows to the overview table
 async function appendOverviewRowsToTable(iso) {
     try {
-        const response = await fetch(`http://localhost:3000/api/scorecard-data?iso=${iso}`);
+        const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${iso}`);
         const data = await response.json();
         const rows = data.rows || [];
         console.log('Appending rows for ISO:', iso, rows); // Debug
