@@ -278,7 +278,7 @@ function initializeMap() {
                     fillColor: '#4285F4',
                     fillOpacity: 0,
                     strokeColor: 'black',
-                    strokeWeight: 1
+                    strokeWeight: 0
                 }
             });
             console.log('Data layer created and styled');
