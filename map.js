@@ -207,16 +207,20 @@ let infoWindow = null;
 
 // Initialize the map
 function initializeMap() {
+    console.log('initializeMap function called');
+    
     if (!google || !google.maps) {
         console.error('Google Maps API not loaded');
         return;
     }
+    console.log('Google Maps API is loaded');
 
     const mapContainer = document.getElementById('map');
     if (!mapContainer) {
         console.error('Map container not found');
         return;
     }
+    console.log('Map container found');
 
     mapContainer.style.width = '100%';
     mapContainer.style.height = '100%';
@@ -232,6 +236,7 @@ function initializeMap() {
             mapTypeIds: ['roadmap', 'hybrid']
         }
     });
+    console.log('Google Map initialized');
 
     // Create InfoWindow
     infoWindow = new google.maps.InfoWindow({
@@ -239,20 +244,22 @@ function initializeMap() {
         pixelOffset: new google.maps.Size(0, -10)
     });
 
+    console.log('Fetching GeoJSON data...');
     // Load local GeoJSON data
     fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
         .then(response => {
+            console.log('GeoJSON fetch response received:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('GeoJSON data loaded successfully:', data);
+            console.log('GeoJSON data loaded successfully. Features count:', data.features ? data.features.length : 0);
             
             // Filter out Antarctica
             const filteredData = {
-                ...data,
+                type: 'FeatureCollection',
                 features: data.features.filter(feature => 
                     feature.id !== 'ATA' && // Antarctica
                     feature.id !== 'BVT' && // Bouvet Island
@@ -261,25 +268,28 @@ function initializeMap() {
                     feature.id !== 'ATF'    // French Southern Territories
                 )
             };
+            console.log('Filtered features count:', filteredData.features.length);
 
             // Add GeoJSON layer
-            countriesLayer = new google.maps.Data();
-            countriesLayer.setMap(map);
+            console.log('Creating Data layer...');
+            countriesLayer = new google.maps.Data({
+                map: map,
+                style: {
+                    fillColor: '#4285F4',
+                    fillOpacity: 0.5,
+                    strokeColor: 'black',
+                    strokeWeight: 1
+                }
+            });
+            console.log('Data layer created and styled');
             
             try {
+                console.log('Adding GeoJSON to map...');
                 countriesLayer.addGeoJson(filteredData);
                 console.log('GeoJSON layer added successfully');
             } catch (error) {
                 console.error('Error adding GeoJSON to map:', error);
             }
-
-            // Style the countries
-            countriesLayer.setStyle({
-                fillColor: '#4285F4',  // Add a fill color
-                fillOpacity: 0.5,      // Make it semi-transparent
-                strokeColor: 'black',  // Border color
-                strokeWeight: 1        // Border width
-            });
 
             // Add mouseover event
             countriesLayer.addListener('mouseover', async (event) => {

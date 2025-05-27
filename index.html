@@ -20,9 +20,12 @@
           throw new Error('No API key received from server');
         }
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initializeMap`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&libraries=places&callback=initializeMap`;
         script.async = true;
         script.defer = true;
+        script.onerror = function() {
+          console.error('Error loading Google Maps script');
+        };
         document.head.appendChild(script);
       })
       .catch(error => {
@@ -33,6 +36,15 @@
           mapDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Error loading map. Please try refreshing the page.</div>';
         }
       });
+
+    // Add global error handler for Google Maps
+    window.gm_authFailure = function() {
+      console.error('Google Maps authentication failed');
+      const mapDiv = document.getElementById('map');
+      if (mapDiv) {
+        mapDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Error: Google Maps authentication failed. Please check your API key.</div>';
+      }
+    };
   </script>
   <script type="module" src="news.js"></script>
   <style>
