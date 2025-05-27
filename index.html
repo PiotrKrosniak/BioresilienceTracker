@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Global Bioresilience Tracker</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="animalOutbreak.js"></script>
+  <script src="news.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="map.js"></script>
+  <script src="ScoreCardData.js"></script>
   <script>
     // Load Google Maps API with key from server
     fetch('/.netlify/functions/get-maps-key')
@@ -14,17 +20,9 @@
           throw new Error('No API key received from server');
         }
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.key}&callback=initializeMap`;
         script.async = true;
         script.defer = true;
-        script.onload = () => {
-          // Initialize map after script is loaded
-          if (typeof initializeMap === 'function') {
-            initializeMap();
-          } else {
-            console.error('initializeMap function not found');
-          }
-        };
         document.head.appendChild(script);
       })
       .catch(error => {
@@ -36,14 +34,7 @@
         }
       });
   </script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="animalOutbreak.js"></script>
-  <script src="news.js"></script>
-  <script src="https://apis.google.com/js/api.js"></script>
-
-  <script src="map.js"></script>
   <script type="module" src="news.js"></script>
-  <script src="ScoreCardData.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
