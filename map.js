@@ -341,6 +341,16 @@ function addMapEventListeners() {
                 infoWindow.setContent(content);
                 infoWindow.setPosition(center);
                 infoWindow.open(map);
+                google.maps.event.addListenerOnce(infoWindow, 'domready', function() {
+                  setTimeout(() => {
+                      const iwCloseBtn = document.querySelector('.gm-ui-hover-effect');
+                      if (iwCloseBtn) {
+                          iwCloseBtn.style.display = 'none';
+                      }
+                  }, 100); // 50ms delay gives browser time to render
+              });
+              
+               
 
                 // Create pie chart data
                 const pieData = [
