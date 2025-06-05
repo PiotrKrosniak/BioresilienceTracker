@@ -324,13 +324,13 @@ function addMapEventListeners() {
                 // Get capital(s)
                 const capital = countryData.capital ? countryData.capital.join(', ') : '-';
 
-                // Create InfoWindow content with pie chart container
                 const content = `
-                    <div style="padding: 5px; min-width: 150px; min-height: 150px;">
-                        <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${countryName}</h3>
-                        <div id="infographic-${countryId}" style="width: 150px; height: 150px; margin: 10px auto;"></div>
-                    </div>
-                `;
+                <div style="padding: 0; min-width: 150px; min-height: 150px; box-sizing: border-box; overflow: hidden;">
+                    <p style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: bold;">${countryName}</p>
+                    <div id="infographic-${countryId}" style="width: 200px; height: 200px; margin: 0 auto;"></div>
+                </div>
+            `;
+            
 
                 // Get the center of the country's geometry
                 const bounds = new google.maps.LatLngBounds();
@@ -548,7 +548,7 @@ function createPieChart(data, containerId) {
         .attr("dy", ".35em")
         .style("text-anchor", "middle")
         .style("fill", "white")
-        .style("font-size", "10px")
+        .style("font-size", "12px")
         .text(d => d.data.name);
 }
 
@@ -559,11 +559,11 @@ function createInfographic(containerId) {
     const labelOffset = 120;
 
     const data = [
-        { label: "Clock", icon: "⏰", color: "#f39c12", triangleColor: "#2ecc71"  },
-        { label: "Chat", icon: "💬", color: "#2ecc71", triangleColor: "#3498db"},
-        { label: "Settings", icon: "⚙️", color: "#3498db", triangleColor: "#e74c3c" },
-        { label: "User", icon: "👤", color: "#e74c3c", triangleColor: "#f39c12" },
-    ];
+      { label: "Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71"  },
+      { label: "Risk management\nand mitigation", color: "#2ecc71", triangleColor: "#3498db"},
+      { label: "Risk communication\nand engagement", color: "#3498db", triangleColor: "#e74c3c" },
+      { label: "Risk monitoring\nand evaluation", color: "#e74c3c", triangleColor: "#f39c12" },
+  ];
 
     const svg = d3.select(`#${containerId}`)
         .append("svg")
@@ -626,35 +626,65 @@ function createInfographic(containerId) {
         .attr("stroke", "white")
         .attr("stroke-width", 0);
 
-    g.append("text")
+        const centralText = g.append("text")
         .attr("text-anchor", "middle")
-        .attr("dy", "0.35em")
-        .style("font-size", "12px")
-        .style("font-weight", "bold")
-        .text("BIORESILIENCE SCORE");
+        .style("font-size", "14px")
+        .style("font-weight", "bold");
+    
+        centralText.append("tspan")
+            .attr("x", 0)
+            .attr("dy", "0em")
+            .text("BIORESILIENCE");
+        
+        centralText.append("tspan")
+            .attr("x", 0)
+            .attr("dy", "1.2em")
+            .text("SCORE");
 
-    g.selectAll("g.label")
-        .data(arcs)
-        .enter()
-        .append("g")
-        .attr("class", "label")
-        .attr("transform", d => {
-            const [x, y] = d3.arc().innerRadius(labelOffset).outerRadius(labelOffset).centroid(d);
-            return `translate(${x},${y})`;
-        })
-        .each(function (d) {
-            const group = d3.select(this);
-            group.append("text")
-                .attr("text-anchor", "middle")
-                .attr("dy", "-0.5em")
-                .style("font-size", "14px")
-                .text(d.icon);
+            g.selectAll("g.label")
+            .data(arcs)
+            .enter()
+            .append("g")
+            .attr("class", "label")
+            .attr("transform", d => {
+              const [x, y] = d3.arc().innerRadius(labelOffset).outerRadius(labelOffset).centroid(d);
+              const midAngle = (d.startAngle + d.endAngle) / 2;
+              const degrees = midAngle * 180 / Math.PI;
+          
+              let verticalShift = 0;
+          
+              if (degrees >= 0 && degrees < 90) {
+                  // Bottom right
+                  verticalShift = 20;
+              } else if (degrees >= 90 && degrees < 180) {
+                  // Bottom left
+                  verticalShift = 30;
+              } else if (degrees >= 180 && degrees < 270) {
+                  // Top left
+                  verticalShift = 30;
+              } else {
+                  // Top right
+                  verticalShift = 10;
+              }
+          
+              return `translate(${x},${y + verticalShift})`;
+          })
+          
+            .each(function (d) {
+                const group = d3.select(this);
+                const lines = d.label.split('\n');
+                const labelText = group.append("text")
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "14px")
+                    .style("font-weight", "normal");
+                
+                lines.forEach((line, i) => {
+                    labelText.append("tspan")
+                        .attr("x", 0)
+                        .attr("dy", i === 0 ? "-1.8em" : "1.5em")
+                        .text(line);
+                });
+            });
+}
 
-            group.append("text")
-                .attr("text-anchor", "middle")
-                .attr("dy", "1.2em")
-                .style("font-size", "10px")
-                .style("font-weight", "bold")
-                .text(d.label);
-        });
-} 
+
