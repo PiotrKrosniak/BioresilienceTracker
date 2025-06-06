@@ -1,13 +1,13 @@
 const { google } = require('googleapis');
 
-// Helper: Extract URLs from plain text
+// Extract URLs from plain text
 function extractUrls(text) {
     if (!text) return [];
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return [...text.matchAll(urlRegex)].map(match => match[0]);
 }
 
-// Optional: Convert Google backgroundColor object to color name (simple version)
+// Convert Google Sheets API background color to human name
 function colorToName(color) {
     if (!color) return null;
     const r = Math.round((color.red || 0) * 255);
@@ -20,7 +20,7 @@ function colorToName(color) {
     return `rgb(${r},${g},${b})`;
 }
 
-exports.handler = async function(event, context) {
+exports.handler = async function (event, context) {
     try {
         if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON || !process.env.SPREADSHEET_ID) {
             return {
@@ -46,48 +46,38 @@ exports.handler = async function(event, context) {
 
         const sheets = google.sheets({ version: 'v4', auth });
 
-        // Verify if sheet exists
-        const metadata = await sheets.spreadsheets.get({
-            spreadsheetId: process.env.SPREADSHEET_ID
+        // 1️⃣ Load raw values (for text)
+        const rawValuesResponse = await sheets.spreadsheets.values.get({
+            spreadsheetId: process.env.SPREADSHEET_ID,
+            range: `${sheetName}!A2:C1000`,
         });
 
-        const sheetExists = metadata.data.sheets.some(sheet => sheet.properties.title === sheetName);
+        const rawValues = rawValuesResponse.data.values || [];
 
-        if (!sheetExists) {
-            return {
-                statusCode: 200,
-                body: JSON.stringify({ rows: [], message: `No data available for ${iso}` })
-            };
-        }
-
-        // Fetch full grid data
-        const result = await sheets.spreadsheets.get({
+        // 2️⃣ Load full grid data (for formatting & links)
+        const gridDataResponse = await sheets.spreadsheets.get({
             spreadsheetId: process.env.SPREADSHEET_ID,
             ranges: [`${sheetName}!A2:C1000`],
             includeGridData: true,
         });
-        console.log("result.data.sheets[0].data[0].rowData", result.data.sheets[0].data[0].rowData);
+
+        const gridData = gridDataResponse.data.sheets[0].data[0].rowData || [];
 
         const rows = [];
-        const rowData = result.data.sheets[0].data[0].rowData || [];
 
-        rowData.forEach(row => {
-            const values = row.values || [];
+        for (let i = 0; i < rawValues.length; i++) {
+            const rawRow = rawValues[i];
+            const gridRow = gridData[i] || { values: [] };
+            const gridCells = gridRow.values || [];
 
-            const idCell = values[0] || {};
-            const labelCell = values[1] || {};
-            const urlCell = values[2] || {};
+            const id = rawRow[0] || null;
+            const label = rawRow[1] || null;
+            const rawUrlText = rawRow[2] || '';
 
-            const id = idCell.formattedValue || null;
-            const label = labelCell.formattedValue || null;
+            const urlCell = gridCells[2] || {};
 
-            // Aggregate URLs from all possible sources
-            const text = urlCell.formattedValue 
-            ?? urlCell.userEnteredValue?.stringValue 
-            ?? '';
-        
-
-            const urlsFromText = extractUrls(text);
+            // Extract links from full API
+            const urlsFromText = extractUrls(rawUrlText);
 
             const richLinks = (urlCell.textFormatRuns || [])
                 .map(run => run.format?.link?.uri)
@@ -95,7 +85,6 @@ exports.handler = async function(event, context) {
 
             const cellLevelLink = urlCell.hyperlink ? [urlCell.hyperlink] : [];
 
-            // Also handle possible formula hyperlink (rare case)
             let formulaLink = [];
             if (urlCell.userEnteredValue?.formulaValue?.startsWith('=HYPERLINK(')) {
                 const match = urlCell.userEnteredValue.formulaValue.match(/=HYPERLINK\("([^"]+)"/);
@@ -106,8 +95,7 @@ exports.handler = async function(event, context) {
 
             const allUrls = [...new Set([...urlsFromText, ...richLinks, ...cellLevelLink, ...formulaLink])];
 
-            // Handle background color (on ID cell)
-            const backgroundColor = idCell.userEnteredFormat?.backgroundColor || null;
+            const backgroundColor = (gridCells[0]?.userEnteredFormat?.backgroundColor) || null;
             const backgroundName = colorToName(backgroundColor);
 
             rows.push({
@@ -116,7 +104,7 @@ exports.handler = async function(event, context) {
                 urls: allUrls,
                 backgroundColor: backgroundName
             });
-        });
+        }
 
         return {
             statusCode: 200,
@@ -125,7 +113,7 @@ exports.handler = async function(event, context) {
     } catch (error) {
         return {
             statusCode: 500,
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 error: 'Failed to fetch scorecard data',
                 details: error.message
             })
