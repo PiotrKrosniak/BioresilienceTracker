@@ -81,7 +81,10 @@ exports.handler = async function(event, context) {
             const label = labelCell.formattedValue || null;
 
             // Aggregate URLs from all possible sources
-            const text = urlCell.formattedValue || '';
+            const text = urlCell.formattedValue 
+            ?? urlCell.userEnteredValue?.stringValue 
+            ?? '';
+        
 
             const urlsFromText = extractUrls(text);
 
