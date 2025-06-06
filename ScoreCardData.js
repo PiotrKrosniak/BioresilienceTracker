@@ -163,7 +163,8 @@ async function appendOverviewRowsToTable(iso) {
             });
         }
 
-        // Update Helpful Resources tab
+
+     // Update Helpful Resources tab
         const resourcesTable = document.querySelector('#resources .info-table table');
         if (resourcesTable) {
             Array.from(resourcesTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
@@ -172,13 +173,24 @@ async function appendOverviewRowsToTable(iso) {
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
                 th.textContent = resourcesRow.label;
+
                 const td = document.createElement('td');
-                td.innerHTML = resourcesRow.text;
+
+                // Split text by newline, clean empty lines
+                const urls = resourcesRow.text.split('\n').filter(url => url.trim());
+
+                const formattedContent = urls.map(url => 
+                    `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display: block; margin: 5px 0;">${url}</a>`
+                ).join('');
+
+                td.innerHTML = formattedContent;
                 tr.appendChild(th);
                 tr.appendChild(td);
                 resourcesTable.appendChild(tr);
             }
         }
+
+
     } catch (error) {
         console.error('Error fetching overview data:', error);
     }
