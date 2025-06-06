@@ -116,78 +116,64 @@ async function updateOverviewTab() {
     document.getElementById('overview').innerHTML = renderOverviewTab(rows);
 }
 
-// Append overview rows to the overview table
 async function appendOverviewRowsToTable(iso) {
     try {
         const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${iso}`);
         const data = await response.json();
         const rows = data.rows || [];
-        console.log('Appending rows for ISO:', iso, rows); // Debug
 
-        // Split rows into different sections
-        const biosecurityExplainerRows = rows.slice(0, 5); // Rows 1-5
-        const biosecurityTrackerRows = rows.slice(5, 18); // Rows 6-11
-        const resourcesRows = rows.slice(19); // Row 12 onwards
+        // Split rows based on ID values
+        const biosecurityExplainerRows = rows.filter(row => parseInt(row.id) >= 1 && parseInt(row.id) <= 6);
+        const biosecurityTrackerRows = rows.filter(row => parseInt(row.id) >= 7 && parseInt(row.id) <= 11);
+        const resourcesRow = rows.find(row => row.id === "12");
 
-        // Update biosecurityExplainer tab
+        // Update Biosecurity Explainer tab
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
         if (biosecurityExplainerTable) {
             Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
             biosecurityExplainerRows.forEach(row => {
-                if (!row[1] || !row[2]) return;
+                if (!row.label || !row.html) return;
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
-                th.textContent = row[1].replace(/\n/g, ' ');
+                th.textContent = row.label;
                 const td = document.createElement('td');
-                td.innerHTML = row[2].replace(/\n/g, '<br>');
+                td.innerHTML = row.html;
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityExplainerTable.appendChild(tr);
             });
         }
 
-        // Update biosecurityTracker tab
+        // Update Biosecurity Tracker tab
         const biosecurityTrackerTable = document.querySelector('#biosecurityTracker .info-table table');
         if (biosecurityTrackerTable) {
             Array.from(biosecurityTrackerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
             biosecurityTrackerRows.forEach(row => {
-                if (!row[1] || !row[2]) return;
+                if (!row.label || !row.html) return;
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
-                th.textContent = row[1].replace(/\n/g, ' ');
+                th.textContent = row.label;
                 const td = document.createElement('td');
-                td.innerHTML = row[2].replace(/\n/g, '<br>');
-                tr.appendChild(th);
-                tr.appendChild(td);
+                td.innerHTML = row.html;
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityTrackerTable.appendChild(tr);
             });
         }
 
-        // Update resources tab
+        // Update Helpful Resources tab
         const resourcesTable = document.querySelector('#resources .info-table table');
         if (resourcesTable) {
             Array.from(resourcesTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
-            
-            // Find the row with ID "12" (Further resources)
-            const resourcesRow = rows.find(row => row[0] === "12");
-            if (resourcesRow && resourcesRow[2]) {
+            if (resourcesRow) {
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
-                th.textContent = resourcesRow[1];
+                th.textContent = resourcesRow.label;
                 const td = document.createElement('td');
-                
-                // Split the content by newlines and process each URL
-                const urls = resourcesRow[2].split('\n').filter(url => url.trim());
-                const formattedContent = urls.map(url => 
-                    `<a href="${url.trim()}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin: 5px 0;">${url.trim()}</a>`
-                ).join('<br>');
-                
-                td.innerHTML = formattedContent;
+                td.innerHTML = resourcesRow.html;
                 tr.appendChild(th);
                 tr.appendChild(td);
                 resourcesTable.appendChild(tr);
@@ -197,6 +183,7 @@ async function appendOverviewRowsToTable(iso) {
         console.error('Error fetching overview data:', error);
     }
 }
+
 
 // Export functions for use in other files
 window.updateNewsTab = updateNewsTab;
