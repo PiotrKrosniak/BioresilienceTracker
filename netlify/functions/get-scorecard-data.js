@@ -1,14 +1,14 @@
-const fetch = require('node-fetch');
+const { google } = require('googleapis');
 
 exports.handler = async function(event, context) {
-    if (!process.env.GOOGLE_MAPS_API_KEY || !process.env.SPREADSHEET_ID) {
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: 'Server configuration error' })
-        };
-    }
-
     try {
+        if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON || !process.env.SPREADSHEET_ID) {
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ error: 'Server configuration error' })
+            };
+        }
+
         const iso = event.queryStringParameters?.iso;
         if (!iso) {
             return {
@@ -19,16 +19,20 @@ exports.handler = async function(event, context) {
 
         const sheetName = `ScoreCards-${iso.toUpperCase()}`;
 
-        // Check if the sheet exists
-        const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}?key=${process.env.GOOGLE_MAPS_API_KEY}`;
-        const metadataResponse = await fetch(metadataUrl);
-        
-        if (!metadataResponse.ok) {
-            throw new Error(`Error fetching spreadsheet metadata: ${metadataResponse.status}`);
-        }
+        // Authenticate with service account
+        const auth = new google.auth.GoogleAuth({
+            credentials: JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON),
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+        });
 
-        const metadata = await metadataResponse.json();
-        const sheetExists = metadata.sheets.some(sheet => sheet.properties.title === sheetName);
+        const sheets = google.sheets({ version: 'v4', auth });
+
+        // Check if the sheet exists
+        const metadata = await sheets.spreadsheets.get({
+            spreadsheetId: process.env.SPREADSHEET_ID
+        });
+
+        const sheetExists = metadata.data.sheets.some(sheet => sheet.properties.title === sheetName);
 
         if (!sheetExists) {
             return {
@@ -40,30 +44,39 @@ exports.handler = async function(event, context) {
             };
         }
 
-        // Fetch sheet data
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.SPREADSHEET_ID}/values/${sheetName}!A2:C1000?key=${process.env.GOOGLE_MAPS_API_KEY}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Google Sheets API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
+        // Fetch sheet data WITH GRID DATA (full format info)
+        const result = await sheets.spreadsheets.get({
+            spreadsheetId: process.env.SPREADSHEET_ID,
+            ranges: [`${sheetName}!A2:C1000`],
+            includeGridData: true,
+        });
+
+        const rows = [];
+
+        const rowData = result.data.sheets[0].data[0].rowData;
+
+        rowData.forEach(row => {
+            const rowCells = row.values.map(cell => {
+                const text = cell.formattedValue || '';
+                const link = cell.textFormatRuns?.[0]?.format?.link?.uri || null;
+                const backgroundColor = cell.userEnteredFormat?.backgroundColor || null;
+                return { text, link, backgroundColor };
+            });
+
+            rows.push(rowCells);
+        });
+
         return {
             statusCode: 200,
-            body: JSON.stringify({ 
-                rows: data.values || []
-            })
+            body: JSON.stringify({ rows })
         };
     } catch (error) {
         return {
             statusCode: 500,
             body: JSON.stringify({ 
                 error: 'Failed to fetch scorecard data',
-                details: error.message,
-                sheet: `ScoreCards-${event.queryStringParameters?.iso?.toUpperCase()}`
+                details: error.message
             })
         };
     }
-}; 
+};

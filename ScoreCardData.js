@@ -171,18 +171,27 @@ async function appendOverviewRowsToTable(iso) {
         const resourcesTable = document.querySelector('#resources .info-table table');
         if (resourcesTable) {
             Array.from(resourcesTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
-            resourcesRows.forEach(row => {
-                if (!row[1] || !row[2]) return;
+            
+            // Find the row with ID "12" (Further resources)
+            const resourcesRow = rows.find(row => row[0] === "12");
+            if (resourcesRow && resourcesRow[2]) {
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
-                th.textContent = row[1].replace(/\n/g, ' ');
+                th.textContent = resourcesRow[1];
                 const td = document.createElement('td');
-                td.innerHTML = row[2].replace(/\n/g, '<br>');
+                
+                // Split the content by newlines and process each URL
+                const urls = resourcesRow[2].split('\n').filter(url => url.trim());
+                const formattedContent = urls.map(url => 
+                    `<a href="${url.trim()}" target="_blank" rel="noopener noreferrer" style="display: inline-block; margin: 5px 0;">${url.trim()}</a>`
+                ).join('<br>');
+                
+                td.innerHTML = formattedContent;
                 tr.appendChild(th);
                 tr.appendChild(td);
                 resourcesTable.appendChild(tr);
-            });
+            }
         }
     } catch (error) {
         console.error('Error fetching overview data:', error);

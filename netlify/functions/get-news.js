@@ -19,9 +19,15 @@ exports.handler = async function(event, context) {
         
         const data = await response.json();
         
+        // Get only the latest 10 rows (excluding header row)
+        const latestNews = {
+            ...data,
+            values: data.values.slice(0, 11) // First row is header, then 10 latest rows
+        };
+        
         return {
             statusCode: 200,
-            body: JSON.stringify(data)
+            body: JSON.stringify(latestNews)
         };
     } catch (error) {
         return {
