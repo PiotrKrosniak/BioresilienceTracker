@@ -5,3 +5,5 @@ index2.html
 node_modules/
 # Local Netlify folder
 .netlify
+.ipynb_checkpoints/
+*.ipynb
