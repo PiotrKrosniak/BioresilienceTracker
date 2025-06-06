@@ -66,6 +66,7 @@ exports.handler = async function(event, context) {
             ranges: [`${sheetName}!A2:C1000`],
             includeGridData: true,
         });
+        console.log("result.data.sheets[0].data[0].rowData", result.data.sheets[0].data[0].rowData);
 
         const rows = [];
         const rowData = result.data.sheets[0].data[0].rowData || [];
