@@ -1,13 +1,13 @@
 const { google } = require('googleapis');
 
-// Extract URLs from plain text
+// Helper: Extract URLs from plain text
 function extractUrls(text) {
     if (!text) return [];
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return [...text.matchAll(urlRegex)].map(match => match[0]);
 }
 
-// Convert Google backgroundColor to color name
+// Convert Google backgroundColor object to simple name
 function colorToName(color) {
     if (!color) return null;
     const r = Math.round((color.red || 0) * 255);
@@ -46,28 +46,28 @@ exports.handler = async function (event, context) {
 
         const sheets = google.sheets({ version: 'v4', auth });
 
-        // 1️⃣ Get text content first (values.get)
+        // 1️⃣ Load plain values
         const rawValuesResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.SPREADSHEET_ID,
             range: `${sheetName}!A2:C1000`,
         });
-
         const rawValues = rawValuesResponse.data.values || [];
 
-        // 2️⃣ Get formatting info (spreadsheets.get)
+        // 2️⃣ Load gridData
         const gridDataResponse = await sheets.spreadsheets.get({
             spreadsheetId: process.env.SPREADSHEET_ID,
             ranges: [`${sheetName}!A2:C1000`],
             includeGridData: true,
         });
-
-        const gridDataRows = gridDataResponse.data.sheets[0].data[0].rowData || [];
+        const gridData = gridDataResponse.data.sheets[0].data[0].rowData || [];
 
         const rows = [];
 
-        for (let i = 0; i < rawValues.length; i++) {
-            const rawRow = rawValues[i];
-            const gridRow = gridDataRows[i] || { values: [] };
+        const maxLength = Math.max(rawValues.length, gridData.length);
+
+        for (let i = 0; i < maxLength; i++) {
+            const rawRow = rawValues[i] || [];
+            const gridRow = gridData[i] || { values: [] };
             const gridCells = gridRow.values || [];
 
             const id = rawRow[0] || null;
@@ -76,7 +76,7 @@ exports.handler = async function (event, context) {
 
             const urlCell = gridCells[2] || {};
 
-            // Extract links from full API
+            // Extract links from gridData
             const urlsFromText = extractUrls(rawUrlText);
 
             const richLinks = (urlCell.textFormatRuns || [])
