@@ -7,7 +7,7 @@ function extractUrls(text) {
     return [...text.matchAll(urlRegex)].map(match => match[0]);
 }
 
-// Convert Google Sheets API background color to human name
+// Convert Google backgroundColor to color name
 function colorToName(color) {
     if (!color) return null;
     const r = Math.round((color.red || 0) * 255);
@@ -46,7 +46,7 @@ exports.handler = async function (event, context) {
 
         const sheets = google.sheets({ version: 'v4', auth });
 
-        // 1️⃣ Load raw values (for text)
+        // 1️⃣ Get text content first (values.get)
         const rawValuesResponse = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.SPREADSHEET_ID,
             range: `${sheetName}!A2:C1000`,
@@ -54,20 +54,20 @@ exports.handler = async function (event, context) {
 
         const rawValues = rawValuesResponse.data.values || [];
 
-        // 2️⃣ Load full grid data (for formatting & links)
+        // 2️⃣ Get formatting info (spreadsheets.get)
         const gridDataResponse = await sheets.spreadsheets.get({
             spreadsheetId: process.env.SPREADSHEET_ID,
             ranges: [`${sheetName}!A2:C1000`],
             includeGridData: true,
         });
 
-        const gridData = gridDataResponse.data.sheets[0].data[0].rowData || [];
+        const gridDataRows = gridDataResponse.data.sheets[0].data[0].rowData || [];
 
         const rows = [];
 
         for (let i = 0; i < rawValues.length; i++) {
             const rawRow = rawValues[i];
-            const gridRow = gridData[i] || { values: [] };
+            const gridRow = gridDataRows[i] || { values: [] };
             const gridCells = gridRow.values || [];
 
             const id = rawRow[0] || null;
