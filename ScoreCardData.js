@@ -173,7 +173,7 @@ async function appendOverviewRowsToTable(iso) {
                 const th = document.createElement('th');
                 th.textContent = resourcesRow.label;
                 const td = document.createElement('td');
-                td.innerHTML = resourcesRow.html;
+                td.innerHTML = resourcesRow.text;
                 tr.appendChild(th);
                 tr.appendChild(td);
                 resourcesTable.appendChild(tr);
