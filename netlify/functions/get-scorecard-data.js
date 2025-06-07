@@ -1,5 +1,15 @@
 const { google } = require('googleapis');
 
+
+// Convert Google Sheets backgroundColor to HEX
+function backgroundColorToHex(color) {
+  if (!color) return null;
+  const r = Math.round((color.red || 0) * 255);
+  const g = Math.round((color.green || 0) * 255);
+  const b = Math.round((color.blue || 0) * 255);
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`.toUpperCase();
+}
+
 // Extract full text with links converted to HTML
 function convertTextWithLinks(text, textFormatRuns = []) {
   const segments = [];
@@ -82,8 +92,11 @@ exports.handler = async function (event, context) {
       const textFormatRuns = urlCell.textFormatRuns || [];
 
       const html = convertTextWithLinks(text, textFormatRuns);
+      const bgColorObj = values[0]?.userEnteredFormat?.backgroundColor || null;
+      const colorHex = backgroundColorToHex(bgColorObj);
 
-      return { id, label, text, html };
+
+      return { id, label, text, html, color: colorHex };
     });
 
     return {
