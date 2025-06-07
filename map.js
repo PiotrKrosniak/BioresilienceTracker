@@ -324,6 +324,23 @@ function addMapEventListeners() {
                 // Get capital(s)
                 const capital = countryData.capital ? countryData.capital.join(', ') : '-';
 
+                // Fetch risk colors from the API
+                const riskColorsResponse = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
+                const riskColorsData = await riskColorsResponse.json();
+                
+                // Create a mapping of risk categories to colors
+                const riskColors = {};
+                if (riskColorsData.rows) {
+                    riskColorsData.rows.forEach(row => {
+                        if (row.label && row.color) {
+                            riskColors[row.label] = {
+                                color: row.color,
+                                triangleColor: row.color // Using the same color for triangle, you can adjust this if needed
+                            };
+                        }
+                    });
+                }
+
                 const content = `
                 <div style="padding: 0; min-width: 150px; min-height: 150px; box-sizing: border-box; overflow: hidden;">
                     <p style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: bold;">${countryName}</p>
@@ -362,7 +379,7 @@ function addMapEventListeners() {
                 // Create pie chart after InfoWindow is shown
                 setTimeout(() => {
                     createPieChart(pieData, `pieChart-${countryId}`);
-                    createInfographic(`infographic-${countryId}`);
+                    createInfographic(`infographic-${countryId}`, riskColors);
                 }, 100);
             }
         } catch (error) {
@@ -562,18 +579,42 @@ function createPieChart(data, containerId) {
         .text(d => d.data.name);
 }
 
-function createInfographic(containerId) {
+function createInfographic(containerId, riskColors = null) {
     const infographicWidth = 300;
     const infographicHeight = 300;
     const radius = 80;
     const labelOffset = 120;
 
+    // Default colors if none provided
+    const defaultColors = {
+        "Risk awareness and understanding": { color: "#f39c12", triangleColor: "#2ecc71" },
+        "Risk management and mitigation": { color: "#2ecc71", triangleColor: "#3498db" },
+        "Risk communication and engagement": { color: "#3498db", triangleColor: "#e74c3c" },
+        "Risk monitoring and evaluation": { color: "#e74c3c", triangleColor: "#f39c12" }
+    };
+
     const data = [
-      { label: "Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71"  },
-      { label: "Risk management\nand mitigation", color: "#2ecc71", triangleColor: "#3498db"},
-      { label: "Risk communication\nand engagement", color: "#3498db", triangleColor: "#e74c3c" },
-      { label: "Risk monitoring\nand evaluation", color: "#e74c3c", triangleColor: "#f39c12" },
-  ];
+        { 
+            label: "Risk awareness\nand understanding", 
+            color: riskColors?.["Risk awareness and understanding"]?.color || defaultColors["Risk awareness and understanding"].color,
+            triangleColor: riskColors?.["Risk awareness and understanding"]?.triangleColor || defaultColors["Risk awareness and understanding"].triangleColor
+        },
+        { 
+            label: "Risk management\nand mitigation", 
+            color: riskColors?.["Risk management and mitigation"]?.color || defaultColors["Risk management and mitigation"].color,
+            triangleColor: riskColors?.["Risk management and mitigation"]?.triangleColor || defaultColors["Risk management and mitigation"].triangleColor
+        },
+        { 
+            label: "Risk communication\nand engagement", 
+            color: riskColors?.["Risk communication and engagement"]?.color || defaultColors["Risk communication and engagement"].color,
+            triangleColor: riskColors?.["Risk communication and engagement"]?.triangleColor || defaultColors["Risk communication and engagement"].triangleColor
+        },
+        { 
+            label: "Risk monitoring\nand evaluation", 
+            color: riskColors?.["Risk monitoring and evaluation"]?.color || defaultColors["Risk monitoring and evaluation"].color,
+            triangleColor: riskColors?.["Risk monitoring and evaluation"]?.triangleColor || defaultColors["Risk monitoring and evaluation"].triangleColor
+        }
+    ];
 
     const svg = d3.select(`#${containerId}`)
         .append("svg")
