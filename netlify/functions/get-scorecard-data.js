@@ -76,7 +76,7 @@ exports.handler = async function (event, context) {
       spreadsheetId: process.env.SPREADSHEET_ID,
       ranges: [`${sheetName}!A2:C1000`],
       includeGridData: true,
-      fields: 'sheets(data(rowData(values(userEnteredValue,formattedValue,textFormatRuns,hyperlink))))'
+      fields: 'sheets(data(rowData.values(userEnteredValue,formattedValue,textFormatRuns,hyperlink,userEnteredFormat.backgroundColor)))'
     });
 
     const rowData = result.data.sheets[0].data[0].rowData || [];
