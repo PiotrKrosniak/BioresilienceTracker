@@ -157,6 +157,9 @@ async function appendOverviewRowsToTable(iso) {
                 th.textContent = row.label;
                 const td = document.createElement('td');
                 td.innerHTML = row.html;
+                // Apply color background 
+                 if (row.color) td.style.backgroundColor = row.color;
+
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityTrackerTable.appendChild(tr);
