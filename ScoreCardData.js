@@ -158,7 +158,7 @@ async function appendOverviewRowsToTable(iso) {
                 const td = document.createElement('td');
                 td.innerHTML = row.html;
                 // Apply color background 
-                 if (row.color) td.style.backgroundColor = row.color;
+                if (row.color) td.style.backgroundColor = row.color;
 
                 tr.appendChild(th);
                 tr.appendChild(td);
