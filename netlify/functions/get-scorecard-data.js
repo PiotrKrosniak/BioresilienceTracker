@@ -92,7 +92,7 @@ exports.handler = async function (event, context) {
       const textFormatRuns = urlCell.textFormatRuns || [];
 
       const html = convertTextWithLinks(text, textFormatRuns);
-      const bgColorObj = values[0]?.userEnteredFormat?.backgroundColor || null;
+      const bgColorObj = values[2]?.userEnteredFormat?.backgroundColor || null;
       const colorHex = backgroundColorToHex(bgColorObj);
 
 
