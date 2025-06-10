@@ -296,7 +296,7 @@ function initializeMap() {
                                         fillColor: '#4285F4',
                                         fillOpacity: 0.3,
                                         strokeColor: 'black',
-                                        strokeWeight: 0.5
+                                        strokeWeight: 0
                                     });
                                 }
                             }
