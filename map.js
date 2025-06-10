@@ -294,7 +294,7 @@ function initializeMap() {
                                 if (data.rows && data.rows.length > 0) {
                                     countriesLayer.overrideStyle(feature, {
                                         fillColor: '#4285F4',
-                                        fillOpacity: 0.3,
+                                        fillOpacity: 0,
                                         strokeColor: 'black',
                                         strokeWeight: 0
                                     });
