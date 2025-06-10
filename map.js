@@ -273,8 +273,15 @@ function initializeMap() {
             // Add GeoJSON layer
             console.log('Creating Data layer...');
             countriesLayer = new google.maps.Data({
-                map: map
-            });
+              map: map
+              });
+              
+              // Set default neutral style for all features
+              countriesLayer.setStyle(feature => ({
+                strokeWeight: 0,
+                fillOpacity: 0
+              }));
+          
             console.log('Data layer created');
             
             try {
