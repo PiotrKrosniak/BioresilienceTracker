@@ -291,21 +291,30 @@ function initializeMap() {
 
                 // Function to apply styles only to countries with data
                 const styleCountriesWithData = async () => {
-                    countriesLayer.forEach(async (feature) => {
-                        const countryId = feature.getId();
-                        
-                        if (!countryId) return;
-                        
-                        // Only style GBR (United Kingdom)
-                        if (countryId === 'GBR') {
-                            countriesLayer.overrideStyle(feature, {
-                                fillColor: '#4285F4',
-                                fillOpacity: 0.6,
-                                strokeColor: '#333',
-                                strokeWeight: 1
-                            });
-                        }
-                    });
+                    try {
+                        // Fetch available ISOs from our new endpoint
+                        const response = await fetch('/.netlify/functions/get-available-isos');
+                        const data = await response.json();
+                        const availableIsos = data.isos || [];
+
+                        countriesLayer.forEach(async (feature) => {
+                            const countryId = feature.getId();
+                            
+                            if (!countryId) return;
+                            
+                            // Style countries that have data
+                            if (availableIsos.includes(countryId)) {
+                                countriesLayer.overrideStyle(feature, {
+                                    fillColor: '#4285F4',
+                                    fillOpacity: 0.3,
+                                    strokeColor: '#333',
+                                    strokeWeight: 0.1
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error styling countries with data:', error);
+                    }
                 };
 
                 // Call the styling function
