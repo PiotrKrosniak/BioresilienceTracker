@@ -289,26 +289,30 @@ function initializeMap() {
                 countriesLayer.addGeoJson(filteredData);
                 console.log('GeoJSON layer added successfully');
 
-                // Style countries with scorecard data
+                // Function to apply styles only to countries with data
                 const styleCountriesWithData = async () => {
                     const features = countriesLayer.getFeatures();
+                    
                     for (const feature of features) {
                         const countryId = feature.getId();
+                        if (!countryId) continue;
+
                         try {
                             const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
                             if (response.ok) {
                                 const data = await response.json();
                                 if (data.rows && data.rows.length > 0) {
+                                    // Style only this country if it has data
                                     countriesLayer.overrideStyle(feature, {
                                         fillColor: '#4285F4',
-                                        fillOpacity: 0,
-                                        strokeColor: 'black',
-                                        strokeWeight: 0
+                                        fillOpacity: 0.6,
+                                        strokeColor: '#333',
+                                        strokeWeight: 1
                                     });
                                 }
                             }
-                        } catch (error) {
-                            console.error(`Error checking scorecard data for ${countryId}:`, error);
+                        } catch (err) {
+                            console.error(`Failed to fetch data for ${countryId}`, err);
                         }
                     }
                 };
