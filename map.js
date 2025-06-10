@@ -295,6 +295,8 @@ function initializeMap() {
                     
                     for (const feature of features) {
                         const countryId = feature.getId();
+                        console.log('Styling countryId:', countryId);
+
                         if (!countryId) continue;
 
                         try {
