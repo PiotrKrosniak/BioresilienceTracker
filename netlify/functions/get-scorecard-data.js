@@ -79,7 +79,7 @@ exports.handler = async function (event, context) {
 
     const result = await sheets.spreadsheets.get({
       spreadsheetId: process.env.SPREADSHEET_ID,
-      ranges: [`${sheetName}!A2:C1000`],
+      ranges: [`${sheetName}!A2:D100`],
       includeGridData: true,
       fields: 'sheets(data(rowData.values(userEnteredValue,formattedValue,textFormatRuns,hyperlink,userEnteredFormat.backgroundColor)))'
     });
