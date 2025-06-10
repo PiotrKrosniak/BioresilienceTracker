@@ -144,9 +144,7 @@ async function appendOverviewRowsToTable(iso) {
             Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
             console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
             biosecurityExplainerRows.forEach(row => {
-                console.log('Processing row:', row);
-                if (!row.label || !row.html) {
-                    console.log('Skipping row - missing label or html:', row);
+                if (!row.label || (!row.html && !row.text)) {
                     return;
                 }
                 const tr = document.createElement('tr');
@@ -158,7 +156,6 @@ async function appendOverviewRowsToTable(iso) {
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityExplainerTable.appendChild(tr);
-                console.log('Added row to table:', tr);
             });
         } else {
             console.log('Biosecurity Explainer table not found in DOM');
