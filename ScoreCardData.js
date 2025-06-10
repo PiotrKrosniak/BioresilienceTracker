@@ -127,11 +127,11 @@ async function appendOverviewRowsToTable(iso) {
         // Split rows based on ID values
         const biosecurityExplainerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return !isNaN(id) && id >= 1 && id <= 5;
+            return (row.id === null) || (!isNaN(id) && id >= 1 && id <= 6);
         });
         const biosecurityTrackerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return !isNaN(id) && id >= 6 && id <= 11;
+            return !isNaN(id) && id >= 7 && id <= 11;
         });
         const resourcesRow = rows.find(row => row.id === "12");
 
