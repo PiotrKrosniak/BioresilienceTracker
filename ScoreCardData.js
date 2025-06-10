@@ -127,13 +127,13 @@ async function appendOverviewRowsToTable(iso) {
         // Split rows based on ID values
         const biosecurityExplainerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return !isNaN(id) && id >= 1 && id <= 6;
+            return !isNaN(id) && id >= 1 && id <= 5;
         });
         
         console.log('Filtered biosecurityExplainerRows:', biosecurityExplainerRows);
         const biosecurityTrackerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return !isNaN(id) && id >= 7 && id <= 11;
+            return !isNaN(id) && id >= 6 && id <= 11;
         });
         const resourcesRow = rows.find(row => row.id === "12");
 
@@ -153,6 +153,7 @@ async function appendOverviewRowsToTable(iso) {
                 th.textContent = row.label;
                 const td = document.createElement('td');
                 td.innerHTML = row.html || row.text; // Use text if html is empty
+                td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityExplainerTable.appendChild(tr);
@@ -176,6 +177,7 @@ async function appendOverviewRowsToTable(iso) {
                 // Apply color background 
                 if (row.color) td.style.backgroundColor = row.color;
 
+                td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityTrackerTable.appendChild(tr);
@@ -203,6 +205,7 @@ async function appendOverviewRowsToTable(iso) {
                 ).join('');
 
                 td.innerHTML = formattedContent;
+                td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
                 tr.appendChild(th);
                 tr.appendChild(td);
                 resourcesTable.appendChild(tr);
