@@ -169,7 +169,7 @@ async function appendOverviewRowsToTable(iso) {
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
-                th.textContent = row.label;
+                th.textContent = row.label || row.text;
                 const td = document.createElement('td');
                 td.innerHTML = row.html || row.text; // Use text if html is empty
                 // Apply color background 
