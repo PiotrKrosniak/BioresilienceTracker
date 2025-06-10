@@ -287,6 +287,33 @@ function initializeMap() {
                 console.log('Adding GeoJSON to map...');
                 countriesLayer.addGeoJson(filteredData);
                 console.log('GeoJSON layer added successfully');
+
+                // Style countries with scorecard data
+                const styleCountriesWithData = async () => {
+                    const features = countriesLayer.getFeatures();
+                    for (const feature of features) {
+                        const countryId = feature.getId();
+                        try {
+                            const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.rows && data.rows.length > 0) {
+                                    countriesLayer.overrideStyle(feature, {
+                                        fillColor: '#4285F4',
+                                        fillOpacity: 0.3,
+                                        strokeColor: 'black',
+                                        strokeWeight: 0.5
+                                    });
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error checking scorecard data for ${countryId}:`, error);
+                        }
+                    }
+                };
+
+                // Call the styling function
+                styleCountriesWithData();
             } catch (error) {
                 console.error('Error adding GeoJSON to map:', error);
             }
@@ -310,6 +337,18 @@ function addMapEventListeners() {
         if (!countryId) return;
 
         try {
+            // First check if scorecard data exists for this country
+            const scorecardResponse = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
+            if (!scorecardResponse.ok) {
+                console.log(`No scorecard data available for ${countryName}`);
+                return;
+            }
+            const scorecardData = await scorecardResponse.json();
+            if (!scorecardData.rows || scorecardData.rows.length === 0) {
+                console.log(`No scorecard data available for ${countryName}`);
+                return;
+            }
+
             // Fetch country data
             const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryId}`);
             const [countryData] = await response.json();
