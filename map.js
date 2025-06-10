@@ -293,26 +293,17 @@ function initializeMap() {
                 const styleCountriesWithData = async () => {
                     countriesLayer.forEach(async (feature) => {
                         const countryId = feature.getId();
-                        console.log('Styling countryId:', countryId);
-
+                        
                         if (!countryId) return;
-
-                        try {
-                            const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
-                            if (response.ok) {
-                                const data = await response.json();
-                                if (data.rows && data.rows.length > 0) {
-                                    // Style only this country if it has data
-                                    countriesLayer.overrideStyle(feature, {
-                                        fillColor: '#4285F4',
-                                        fillOpacity: 0.6,
-                                        strokeColor: '#333',
-                                        strokeWeight: 1
-                                    });
-                                }
-                            }
-                        } catch (err) {
-                            console.error(`Failed to fetch data for ${countryId}`, err);
+                        
+                        // Only style GBR (United Kingdom)
+                        if (countryId === 'GBR') {
+                            countriesLayer.overrideStyle(feature, {
+                                fillColor: '#4285F4',
+                                fillOpacity: 0.6,
+                                strokeColor: '#333',
+                                strokeWeight: 1
+                            });
                         }
                     });
                 };
