@@ -122,9 +122,19 @@ async function appendOverviewRowsToTable(iso) {
         const data = await response.json();
         const rows = data.rows || [];
 
+        console.log('All rows:', rows);
+        
         // Split rows based on ID values
-        const biosecurityExplainerRows = rows.filter(row => parseInt(row.id) >= 1 && parseInt(row.id) <= 6);
-        const biosecurityTrackerRows = rows.filter(row => parseInt(row.id) >= 7 && parseInt(row.id) <= 11);
+        const biosecurityExplainerRows = rows.filter(row => {
+            const id = parseInt(row.id);
+            return !isNaN(id) && id >= 1 && id <= 6;
+        });
+        
+        console.log('Filtered biosecurityExplainerRows:', biosecurityExplainerRows);
+        const biosecurityTrackerRows = rows.filter(row => {
+            const id = parseInt(row.id);
+            return !isNaN(id) && id >= 7 && id <= 11;
+        });
         const resourcesRow = rows.find(row => row.id === "12");
 
         // Update Biosecurity Explainer tab
