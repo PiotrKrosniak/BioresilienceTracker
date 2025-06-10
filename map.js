@@ -298,14 +298,6 @@ function initializeMap() {
                                         strokeColor: 'black',
                                         strokeWeight: 0.5
                                     });
-                                } else {
-                                    // Set default style for countries without data
-                                    countriesLayer.overrideStyle(feature, {
-                                        fillColor: '#4285F4',
-                                        fillOpacity: 0,
-                                        strokeColor: 'black',
-                                        strokeWeight: 0
-                                    });
                                 }
                             }
                         } catch (error) {
