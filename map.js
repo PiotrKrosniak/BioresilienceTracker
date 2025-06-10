@@ -292,6 +292,7 @@ function initializeMap() {
                 // Function to apply styles only to countries with data
                 const styleCountriesWithData = async () => {
                     const features = countriesLayer.getFeatures();
+                    console.log('Features:', features);
                     
                     for (const feature of features) {
                         const countryId = feature.getId();
