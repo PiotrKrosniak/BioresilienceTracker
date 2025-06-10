@@ -11,8 +11,13 @@ function backgroundColorToHex(color) {
 }
 
 // Extract full text with links converted to HTML
-function convertTextWithLinks(text, textFormatRuns = []) {
+function convertTextWithLinks(text, textFormatRuns = [], hyperlinkUrl = null) {
   const segments = [];
+
+  // If we have a hyperlink formula but no textFormatRuns, create a single link
+  if (hyperlinkUrl && textFormatRuns.length === 0) {
+    return `<a href="${hyperlinkUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+  }
 
   // Sort runs by startIndex for safety
   textFormatRuns.sort((a, b) => (a.startIndex || 0) - (b.startIndex || 0));
@@ -90,8 +95,22 @@ exports.handler = async function (event, context) {
       const urlCell = values[2] || {};
       const text = urlCell.formattedValue || '';
       const textFormatRuns = urlCell.textFormatRuns || [];
+      
+      // Check for HYPERLINK formula
+      let hyperlinkUrl = null;
+      const formula = urlCell.userEnteredValue?.formulaValue;
+      if (formula) {
+        const match = formula.match(/=HYPERLINK\("([^"]+)",\s*"([^"]+)"\)/);
+        if (match) {
+          hyperlinkUrl = match[1];
+          // If no text is present, use the label from the formula
+          if (!text) {
+            text = match[2];
+          }
+        }
+      }
 
-      const html = convertTextWithLinks(text, textFormatRuns);
+      const html = convertTextWithLinks(text, textFormatRuns, hyperlinkUrl);
       const bgColorObj = values[2]?.userEnteredFormat?.backgroundColor || null;
       const colorHex = backgroundColorToHex(bgColorObj);
 
