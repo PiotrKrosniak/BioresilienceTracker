@@ -92,13 +92,8 @@ exports.handler = async function (event, context) {
       const id = values[0]?.formattedValue || null;
       const label = values[1]?.formattedValue || null;
 
-      // Check both column C and D for text
-      const urlCell = values[2] || {};
-      const text = urlCell.formattedValue || '';
-      const textFormatRuns = urlCell.textFormatRuns || [];
-      
-      // If no text in column C, check column D
-      if (!text) {
+      // If id is null, get text from column D
+      if (id === null) {
         const dCell = values[3] || {};
         const dText = dCell.formattedValue || '';
         const dTextFormatRuns = dCell.textFormatRuns || [];
@@ -124,6 +119,11 @@ exports.handler = async function (event, context) {
         return { id, label, text: dText, html, color: colorHex };
       }
 
+      // If id is not null, get text from column C
+      const urlCell = values[2] || {};
+      const text = urlCell.formattedValue || '';
+      const textFormatRuns = urlCell.textFormatRuns || [];
+      
       // Check for HYPERLINK formula in column C
       let hyperlinkUrl = null;
       const formula = urlCell.userEnteredValue?.formulaValue;
