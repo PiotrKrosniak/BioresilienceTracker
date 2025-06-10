@@ -129,8 +129,6 @@ async function appendOverviewRowsToTable(iso) {
             const id = parseInt(row.id);
             return !isNaN(id) && id >= 1 && id <= 5;
         });
-        
-        console.log('Filtered biosecurityExplainerRows:', biosecurityExplainerRows);
         const biosecurityTrackerRows = rows.filter(row => {
             const id = parseInt(row.id);
             return !isNaN(id) && id >= 6 && id <= 11;
@@ -141,8 +139,7 @@ async function appendOverviewRowsToTable(iso) {
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
         console.log('Biosecurity Explainer Table Element:', biosecurityExplainerTable);
         if (biosecurityExplainerTable) {
-            Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
-            console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
+            Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());         console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
             biosecurityExplainerRows.forEach(row => {
                 if (!row.label || (!row.html && !row.text)) {
                     return;
@@ -167,16 +164,17 @@ async function appendOverviewRowsToTable(iso) {
         if (biosecurityTrackerTable) {
             Array.from(biosecurityTrackerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
             biosecurityTrackerRows.forEach(row => {
-                if (!row.label || !row.html) return;
+                if (!row.label || (!row.html && !row.text)) {
+                    return;
+                }
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
                 const th = document.createElement('th');
                 th.textContent = row.label;
                 const td = document.createElement('td');
-                td.innerHTML = row.html;
+                td.innerHTML = row.html || row.text; // Use text if html is empty
                 // Apply color background 
                 if (row.color) td.style.backgroundColor = row.color;
-
                 td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
                 tr.appendChild(th);
                 tr.appendChild(td);
