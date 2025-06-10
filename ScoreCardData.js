@@ -138,18 +138,28 @@ async function appendOverviewRowsToTable(iso) {
         // Update Biosecurity Explainer tab
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
         if (biosecurityExplainerTable) {
-            Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());         console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
+            Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
+            console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
             biosecurityExplainerRows.forEach(row => {
-                if (!row.label || (!row.html && !row.text)) {
+                // Skip if both label and text are empty
+                if (!row.label && !row.text) {
                     return;
                 }
+
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
+                
+                // Create header cell
                 const th = document.createElement('th');
+                // Use text as label if label is null
                 th.textContent = row.label || row.text;
+                
+                // Create content cell
                 const td = document.createElement('td');
-                td.innerHTML = row.html || row.text; // Use text if html is empty
+                // Use html if available, otherwise use text
+                td.innerHTML = row.html || row.text;
                 td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
+                
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityExplainerTable.appendChild(tr);
