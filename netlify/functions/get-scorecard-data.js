@@ -92,39 +92,11 @@ exports.handler = async function (event, context) {
       const id = values[0]?.formattedValue || null;
       const label = values[1]?.formattedValue || null;
 
-      // If id is null, get text from column D
-      if (id === null) {
-        const dCell = values[3] || {};
-        const dText = dCell.formattedValue || '';
-        const dTextFormatRuns = dCell.textFormatRuns || [];
-        
-        // Check for HYPERLINK formula in column D
-        let hyperlinkUrl = null;
-        const formula = dCell.userEnteredValue?.formulaValue;
-        if (formula) {
-          const match = formula.match(/=HYPERLINK\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/);
-          if (match) {
-            hyperlinkUrl = match[1];
-            // If no text is present, use the label from the formula
-            if (!dText) {
-              text = match[2];
-            }
-          }
-        }
-
-        const html = convertTextWithLinks(dText, dTextFormatRuns, hyperlinkUrl);
-        const bgColorObj = dCell?.userEnteredFormat?.backgroundColor || null;
-        const colorHex = backgroundColorToHex(bgColorObj);
-
-        return { id, label, text: dText, html, color: colorHex };
-      }
-
-      // If id is not null, get text from column C
       const urlCell = values[2] || {};
       const text = urlCell.formattedValue || '';
       const textFormatRuns = urlCell.textFormatRuns || [];
       
-      // Check for HYPERLINK formula in column C
+      // Check for HYPERLINK formula
       let hyperlinkUrl = null;
       const formula = urlCell.userEnteredValue?.formulaValue;
       if (formula) {
