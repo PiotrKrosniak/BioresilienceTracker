@@ -306,7 +306,7 @@ function initializeMap() {
                             if (availableIsos.includes(countryId)) {
                                 countriesLayer.overrideStyle(feature, {
                                     fillColor: '#4285F4',
-                                    fillOpacity: 0.3,
+                                    fillOpacity: 0.1,
                                     strokeColor: '#333',
                                     strokeWeight: 0.1
                                 });
