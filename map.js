@@ -273,15 +273,9 @@ function initializeMap() {
             // Add GeoJSON layer
             console.log('Creating Data layer...');
             countriesLayer = new google.maps.Data({
-                map: map,
-                style: {
-                    fillColor: '#4285F4',
-                    fillOpacity: 0,
-                    strokeColor: 'black',
-                    strokeWeight: 0
-                }
+                map: map
             });
-            console.log('Data layer created and styled');
+            console.log('Data layer created');
             
             try {
                 console.log('Adding GeoJSON to map...');
@@ -303,6 +297,14 @@ function initializeMap() {
                                         fillOpacity: 0.3,
                                         strokeColor: 'black',
                                         strokeWeight: 0.5
+                                    });
+                                } else {
+                                    // Set default style for countries without data
+                                    countriesLayer.overrideStyle(feature, {
+                                        fillColor: '#4285F4',
+                                        fillOpacity: 0,
+                                        strokeColor: 'black',
+                                        strokeWeight: 0
                                     });
                                 }
                             }
