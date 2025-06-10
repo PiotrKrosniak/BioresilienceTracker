@@ -137,7 +137,6 @@ async function appendOverviewRowsToTable(iso) {
 
         // Update Biosecurity Explainer tab
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
-        console.log('Biosecurity Explainer Table Element:', biosecurityExplainerTable);
         if (biosecurityExplainerTable) {
             Array.from(biosecurityExplainerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());         console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
             biosecurityExplainerRows.forEach(row => {
