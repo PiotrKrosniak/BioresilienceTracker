@@ -291,14 +291,11 @@ function initializeMap() {
 
                 // Function to apply styles only to countries with data
                 const styleCountriesWithData = async () => {
-                    const features = countriesLayer.getFeatures();
-                    console.log('Features:', features);
-                    
-                    for (const feature of features) {
+                    countriesLayer.forEach(async (feature) => {
                         const countryId = feature.getId();
                         console.log('Styling countryId:', countryId);
 
-                        if (!countryId) continue;
+                        if (!countryId) return;
 
                         try {
                             const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
@@ -317,7 +314,7 @@ function initializeMap() {
                         } catch (err) {
                             console.error(`Failed to fetch data for ${countryId}`, err);
                         }
-                    }
+                    });
                 };
 
                 // Call the styling function
