@@ -100,7 +100,7 @@ exports.handler = async function (event, context) {
       let hyperlinkUrl = null;
       const formula = urlCell.userEnteredValue?.formulaValue;
       if (formula) {
-        const match = formula.match(/=HYPERLINK\("([^"]+)",\s*"([^"]+)"\)/);
+        const match = formula.match(/=HYPERLINK\s*\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/);
         if (match) {
           hyperlinkUrl = match[1];
           // If no text is present, use the label from the formula
