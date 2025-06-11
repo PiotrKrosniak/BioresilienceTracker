@@ -151,13 +151,21 @@ async function appendOverviewRowsToTable(iso) {
                 
                 // Create header cell
                 const th = document.createElement('th');
-                // Use text as label if label is null
-                th.textContent = row.label || row.text;
+                // If id is null, use html for label, otherwise use label or text
+                if (!row.id) {
+                    th.innerHTML = row.html;
+                } else {
+                    th.textContent = row.label || row.text;
+                }
                 
                 // Create content cell
                 const td = document.createElement('td');
-                // Use html if available, otherwise use text
-                td.innerHTML = row.html || row.text;
+                // If id is null, use dHtml, otherwise use html or text
+                if (!row.id) {
+                    td.innerHTML = row.dHtml;
+                } else {
+                    td.innerHTML = row.html || row.text;
+                }
                 td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
                 
                 tr.appendChild(th);
