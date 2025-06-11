@@ -91,7 +91,6 @@ exports.handler = async function (event, context) {
     const rows = rowData.map(row => {
       const values = row.values || [];
 
-      console.log('Column D raw value:', JSON.stringify(values[3], null, 2));
 
 
       const id = values[0]?.formattedValue || null;
@@ -127,7 +126,7 @@ exports.handler = async function (event, context) {
       const colorHex = backgroundColorToHex(bgColorObj);
 
 
-      return { id, label, text, html, color: colorHex ,dHtml};
+      return { id, label, text, html, color: colorHex , dText, dHyperlinkUrl, dHtml, dTextFormatRuns};
     });
 
     return {
