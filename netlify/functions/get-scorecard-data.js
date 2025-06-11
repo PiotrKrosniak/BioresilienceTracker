@@ -95,6 +95,13 @@ exports.handler = async function (event, context) {
       const urlCell = values[2] || {};
       const text = urlCell.formattedValue || '';
       const textFormatRuns = urlCell.textFormatRuns || [];
+      const dColumn = values[3] || {};
+      const dText = dColumn.formattedValue || '';
+      const dTextFormatRuns = dColumn.textFormatRuns || [];
+      const dHyperlinkUrl = dColumn.hyperlink?.uri || null;
+      const dHtml = convertTextWithLinks(dText, dTextFormatRuns, dHyperlinkUrl);
+     
+
       
       // Check for HYPERLINK formula
       let hyperlinkUrl = null;
@@ -115,7 +122,7 @@ exports.handler = async function (event, context) {
       const colorHex = backgroundColorToHex(bgColorObj);
 
 
-      return { id, label, text, html, color: colorHex };
+      return { id, label, text, html, color: colorHex ,dHtml};
     });
 
     return {
