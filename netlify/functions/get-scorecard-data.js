@@ -85,6 +85,8 @@ exports.handler = async function (event, context) {
     });
 
     const rowData = result.data.sheets[0].data[0].rowData || [];
+    console.log('Raw row data:', JSON.stringify(rowData, null, 2));
+
 
     const rows = rowData.map(row => {
       const values = row.values || [];
