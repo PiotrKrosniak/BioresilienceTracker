@@ -162,7 +162,7 @@ async function appendOverviewRowsToTable(iso) {
                 const td = document.createElement('td');
                 // If id is null, use dHtml, otherwise use html or text
                 if (!row.id) {
-                    td.innerHTML = row.dHtml;
+                    td.innerHTML = row.dHtml || row.dText;
                 } else {
                     td.innerHTML = row.html || row.text;
                 }
