@@ -103,7 +103,23 @@ exports.handler = async function (event, context) {
       const dText = dColumn.formattedValue || '';
       const dTextFormatRuns = dColumn.textFormatRuns || [];
       const dHyperlinkUrl = dColumn.hyperlink?.uri || null;
-      const dHtml = convertTextWithLinks(dText, dTextFormatRuns, dHyperlinkUrl);
+
+      // Pre-process the text to handle bullet points and line breaks
+      const processedDText = dText
+        .split('\n')
+        .map(line => {
+          // If line starts with a bullet point, wrap it in a list item
+          if (line.trim().startsWith('●')) {
+            return `<li>${line.trim().substring(1).trim()}</li>`;
+          }
+          return line;
+        })
+        .join('\n');
+
+      // If we have bullet points, wrap the content in a ul tag
+      const dHtml = processedDText.includes('<li>') 
+        ? `<ul>${processedDText}</ul>`
+        : convertTextWithLinks(dText, dTextFormatRuns, dHyperlinkUrl);
      
 
       
