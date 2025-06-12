@@ -163,6 +163,8 @@ async function appendOverviewRowsToTable(iso) {
                 // If id is null, use dHtml, otherwise use html or text
                 if (!row.id) {
                     td.innerHTML = row.dHtml || row.dText;
+                } else if (row.id === "6") {
+                    td.innerHTML = row.dText || row.text; // Use columnD if available, fallback to text
                 } else {
                     td.innerHTML = row.html || row.text;
                 }
