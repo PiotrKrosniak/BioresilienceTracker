@@ -45,10 +45,15 @@ function renderNewsContent(rows, message = null) {
 }
 
 // Function to update news for a specific category
-async function updateNewsTab(iso) {
-    console.log(`Updating government news tab for country: ${iso}`);
+async function updateNewsTab(iso3) {
+    console.log(`Updating government news tab for country: ${iso3}`);
     try {
-        const response = await fetch(`/.netlify/functions/get-country-data?iso=${iso}`);
+        // Convert ISO-3 to ISO-2 using the REST Countries API
+        const countryResponse = await fetch(`https://restcountries.com/v3.1/alpha/${iso3}`);
+        const [countryData] = await countryResponse.json();
+        const iso2 = countryData.cca2; // Get ISO-2 code
+
+        const response = await fetch(`/.netlify/functions/get-country-data?iso=${iso2}`);
         const data = await response.json();
         
         if (data.outbreaks && data.outbreaks.length > 0) {
