@@ -141,11 +141,31 @@ async function appendOverviewRowsToTable(iso) {
 
 
         // Update Overview tab
-        
-        
-        
-        
-        
+        const overviewTable = document.querySelector('#overview .info-table table');
+        if (overviewTable) {
+            Array.from(overviewTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
+            overviewRows.forEach(row => {
+                if (!row.label && !row.text) {
+                    return;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'overview-extra-row';
+                
+                const th = document.createElement('th');
+                th.textContent = row.label || row.text;
+                
+                const td = document.createElement('td');
+                td.innerHTML = row.html || row.text;
+                td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
+                
+                tr.appendChild(th);
+                tr.appendChild(td);
+                overviewTable.appendChild(tr);
+            });
+        } else {
+            console.log('Overview table not found in DOM');
+        }
         
         // Update Biosecurity Explainer tab
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
