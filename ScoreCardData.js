@@ -141,17 +141,11 @@ async function appendOverviewRowsToTable(iso) {
 
 
         // Update Overview tab
-        const overviewTable = document.querySelector('#overview .info-table table');
-        if (overviewTable) {
-            Array.from(overviewTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
-            overviewRows.forEach(row => {
-                const tr = document.createElement('tr');
         
         
         
         
         
-                    
         
         // Update Biosecurity Explainer tab
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
