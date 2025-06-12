@@ -422,11 +422,13 @@ function addMapEventListeners() {
     // Add click event
     countriesLayer.addListener('click', (event) => {
         const countryId = event.feature.getId();
+        const countryName = event.feature.getProperty('name');
         if (!countryId) return;
         
         handleCountryClick(null, { 
             properties: { 
-                iso3: countryId 
+                iso3: countryId,
+                name: countryName
             } 
         });
     });
@@ -434,8 +436,13 @@ function addMapEventListeners() {
 
 // Handle country click event
 async function handleCountryClick(event, d) {
+    if (!d || !d.properties || !d.properties.name) {
+        console.error('Invalid country data:', d);
+        return;
+    }
+    
     const countryName = d.properties.name;
-    $('#countryTitle').text(countryName);
+    document.getElementById('countryTitle').textContent = countryName;
     
     try {
         // Fetch country data from our scorecard endpoint
