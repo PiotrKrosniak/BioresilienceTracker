@@ -12,34 +12,47 @@ function backgroundColorToHex(color) {
 
 // Extract full text with links converted to HTML
 function convertTextWithLinks(text, textFormatRuns = [], hyperlinkUrl = null) {
-  const segments = [];
-
-  // If we have a hyperlink formula but no textFormatRuns, create a single link
+  // If we have a hyperlink formula but no format runs, treat whole cell as a link
   if (hyperlinkUrl && textFormatRuns.length === 0) {
     return `<a href="${hyperlinkUrl}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
   }
 
-  // Sort runs by startIndex for safety
-  textFormatRuns.sort((a, b) => (a.startIndex || 0) - (b.startIndex || 0));
+  // Sort the runs to ensure correct order
+  const runs = [...textFormatRuns].sort((a, b) => (a.startIndex || 0) - (b.startIndex || 0));
 
-  for (let i = 0; i < textFormatRuns.length; i++) {
-    const run = textFormatRuns[i];
-    const start = run.startIndex || 0;
-    const end = (i + 1 < textFormatRuns.length)
-      ? textFormatRuns[i + 1].startIndex
-      : text.length;
-
-    const segmentText = text.slice(start, end);
-    const link = run.format?.link?.uri;
-
-    if (link) {
-      segments.push(`<a href="${link}" target="_blank" rel="noopener noreferrer">${escapeHtml(segmentText)}</a>`);
-    } else {
-      segments.push(escapeHtml(segmentText));
-    }
+  // Google always includes a first run without startIndex (meaning 0). If it is missing, add a default one
+  if (runs.length === 0 || (runs[0].startIndex ?? 0) !== 0) {
+    runs.unshift({ startIndex: 0, format: {} });
   }
 
-  return segments.join('');
+  let html = "";
+
+  for (let i = 0; i < runs.length; i++) {
+    const current = runs[i];
+    const start = current.startIndex || 0;
+    const end = (i + 1 < runs.length) ? runs[i + 1].startIndex : text.length;
+
+    const rawSegment = text.slice(start, end);
+    if (!rawSegment) continue;
+
+    const { link, bold } = current.format || {};
+
+    let segmentHtml = escapeHtml(rawSegment);
+
+    // Apply bold if flagged
+    if (bold) {
+      segmentHtml = `<strong>${segmentHtml}</strong>`;
+    }
+
+    // Apply link if flagged
+    if (link?.uri) {
+      segmentHtml = `<a href="${link.uri}" target="_blank" rel="noopener noreferrer">${segmentHtml}</a>`;
+    }
+
+    html += segmentHtml;
+  }
+
+  return html;
 }
 
 // Simple HTML escape for safety (basic version)
@@ -104,22 +117,26 @@ exports.handler = async function (event, context) {
       const dTextFormatRuns = dColumn.textFormatRuns || [];
       const dHyperlinkUrl = dColumn.hyperlink?.uri || null;
 
-      // Pre-process the text to handle bullet points and line breaks
-      const processedDText = dText
+      // First, convert the full cell text (including links & bold) to HTML
+      const baseDHtml = convertTextWithLinks(dText, dTextFormatRuns, dHyperlinkUrl);
+
+      // Transform bullet-point lines (• or ●) into <li> items while keeping formatting
+      const bulletTransformed = baseDHtml
         .split('\n')
         .map(line => {
-          // If line starts with a bullet point, wrap it in a list item
-          if (line.trim().startsWith('●')) {
-            return `<li>${line.trim().substring(1).trim()}</li>`;
+          const trimmed = line.trimStart();
+          if (trimmed.startsWith('●') || trimmed.startsWith('•')) {
+            // remove the bullet character and any following nbsp/space
+            const withoutBullet = trimmed.substring(1).replace(/^\s*|&nbsp;?/,'').trimStart();
+            return `<li>${withoutBullet}</li>`;
           }
           return line;
         })
-        .join('\n');
+        .join('');
 
-      // If we have bullet points, wrap the content in a ul tag
-      const dHtml = processedDText.includes('<li>') 
-        ? `<ul>${processedDText}</ul>`
-        : convertTextWithLinks(dText, dTextFormatRuns, dHyperlinkUrl);
+      const dHtml = bulletTransformed.includes('<li>')
+        ? `<ul>${bulletTransformed}</ul>`
+        : bulletTransformed;
      
 
       
