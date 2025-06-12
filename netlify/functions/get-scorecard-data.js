@@ -81,6 +81,27 @@ exports.handler = async function (event, context) {
       };
     }
 
+    // Fetch country data from REST Countries API
+    const countryResponse = await fetch(`https://restcountries.com/v3.1/alpha/${iso}`);
+    const [countryData] = await countryResponse.json();
+
+    let countryInfo = {};
+    if (countryData) {
+      countryInfo = {
+        capital: countryData.capital ? countryData.capital.join(', ') : '-',
+        population: countryData.population ? countryData.population.toLocaleString() : '-',
+        region: countryData.subregion ? `${countryData.region} (${countryData.subregion})` : countryData.region || '-',
+        area: countryData.area ? `${countryData.area.toLocaleString()} km²` : '-',
+        languages: countryData.languages ? Object.values(countryData.languages).join(', ') : '-',
+        currencies: countryData.currencies ? 
+          Object.values(countryData.currencies)
+            .map(curr => `${curr.name} (${curr.symbol})`)
+            .join(', ') : '-',
+        timezones: countryData.timezones ? countryData.timezones.join(', ') : '-',
+        flag: countryData.flags?.svg || null
+      };
+    }
+
     const sheetName = `ScoreCards-${iso.toUpperCase()}`;
 
     const auth = new google.auth.GoogleAuth({
@@ -164,7 +185,10 @@ exports.handler = async function (event, context) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ rows })
+      body: JSON.stringify({ 
+        rows,
+        countryInfo 
+      })
     };
 
   } catch (error) {

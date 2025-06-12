@@ -438,59 +438,31 @@ async function handleCountryClick(event, d) {
     $('#countryTitle').text(countryName);
     
     try {
-        // Fetch country data from REST Countries API
-        const response = await fetch(`https://restcountries.com/v3.1/alpha/${encodeURIComponent(d.properties.iso3)}`);
-        const [countryData] = await response.json();
+        // Fetch country data from our scorecard endpoint
+        const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${encodeURIComponent(d.properties.iso3)}`);
+        const data = await response.json();
         
-        if (countryData) {
-            // Format population with commas
-            const formattedPopulation = countryData.population.toLocaleString();
-            
-            // Format area with commas and km²
-            const formattedArea = countryData.area ? `${countryData.area.toLocaleString()} km²` : '-';
-            
-            // Get capital(s)
-            const capital = countryData.capital ? countryData.capital.join(', ') : '-';
-            
-            // Get region and subregion
-            const region = countryData.subregion ? `${countryData.region} (${countryData.subregion})` : countryData.region;
-            
-            // Get languages
-            const languages = countryData.languages ? Object.values(countryData.languages).join(', ') : '-';
-            
-            // Get currencies
-            const currencies = countryData.currencies ? 
-                Object.values(countryData.currencies)
-                    .map(curr => `${curr.name} (${curr.symbol})`)
-                    .join(', ') : '-';
-            
-            // Get timezones
-            const timezones = countryData.timezones ? countryData.timezones.join(', ') : '-';
-
-            // Update the overview tab
-            $('#capital').text(capital);
-            $('#population').text(formattedPopulation);
-            $('#area').text(formattedArea);
-            $('#region').text(region);
-            $('#languages').text(languages);
-            $('#currencies').text(currencies);
-            $('#timezones').text(timezones);
+        if (data.countryInfo) {
+            // Update the overview tab with country info
+            $('#capital').text(data.countryInfo.capital);
+            $('#population').text(data.countryInfo.population);
+            $('#region').text(data.countryInfo.region);
             
             // Add flag if available
-            if (countryData.flags && countryData.flags.svg) {
-                $('#countryFlag').attr('src', countryData.flags.svg).show();
+            if (data.countryInfo.flag) {
+                $('#countryFlag').attr('src', data.countryInfo.flag).show();
             } else {
                 $('#countryFlag').hide();
             }
 
-            // Update overview table with score card rows using ISO3 code
-            if (countryData.cca3 && window.appendOverviewRowsToTable) {
-                window.appendOverviewRowsToTable(countryData.cca3);
+            // Update overview table with score card rows
+            if (window.appendOverviewRowsToTable) {
+                window.appendOverviewRowsToTable(d.properties.iso3);
             }
 
             // Update news tab with country-specific data
-            if (countryData.cca2 && window.updateNewsTab) {
-                window.updateNewsTab(countryData.cca2);
+            if (window.updateNewsTab) {
+                window.updateNewsTab(d.properties.iso3);
             }
         }
     } catch (error) {
