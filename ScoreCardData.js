@@ -124,10 +124,14 @@ async function appendOverviewRowsToTable(iso) {
 
         console.log('All rows:', rows);
         
-        // Split rows based on ID values
+        // Split rows based on ID 
+        const overviewRows = rows.filter(row => {
+            const id = parseInt(row.id);
+            return (row.id === null) || (!isNaN(id) && (id === 2 || id === 3 || id === 4 || id === 5));
+        });
         const biosecurityExplainerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return (row.id === null) || (!isNaN(id) && id >= 1 && id <= 6);
+            return (row.id === null) || (!isNaN(id) && (id === 1 || id === 6));
         });
         const biosecurityTrackerRows = rows.filter(row => {
             const id = parseInt(row.id);
@@ -135,6 +139,20 @@ async function appendOverviewRowsToTable(iso) {
         });
         const resourcesRow = rows.find(row => row.id === "12");
 
+
+        // Update Overview tab
+        const overviewTable = document.querySelector('#overview .info-table table');
+        if (overviewTable) {
+            Array.from(overviewTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
+            overviewRows.forEach(row => {
+                const tr = document.createElement('tr');
+        
+        
+        
+        
+        
+                    
+        
         // Update Biosecurity Explainer tab
         const biosecurityExplainerTable = document.querySelector('#biosecurityExplainer .info-table table');
         if (biosecurityExplainerTable) {
