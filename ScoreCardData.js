@@ -132,14 +132,15 @@ async function appendOverviewRowsToTable(iso) {
         // Split rows based on ID 
         const overviewRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return !isNaN(id) && (id === 2 || id === 3 || id === 5);
+            return !isNaN(id) && (id === 1 || id === 2 || id === 3 || id === 5 || id === 12);
         });
         const biosecurityExplainerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return (row.id === null) || (!isNaN(id) && (id === 1 || id === 6));
+            return (row.id === null) || (!isNaN(id) && (id === 6));
         });
         const biosecurityTrackerRows = rows.filter(row => {
             const id = parseInt(row.id);
+            // Include rows 7 through 11 (inclusive) in the Biosecurity Tracker tab
             return !isNaN(id) && id >= 7 && id <= 11;
         });
         const resourcesRow = rows.find(row => row.id === "12");
@@ -161,7 +162,15 @@ async function appendOverviewRowsToTable(iso) {
                 th.textContent = row.label || row.text;
                 
                 const td = document.createElement('td');
-                td.innerHTML = row.html || row.text;
+                if (row.id === "12") {
+                    // Special formatting for URLs
+                    const urls = row.text.split('\n').filter(url => url.trim());
+                    td.innerHTML = urls.map(url => 
+                        `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display: block; margin: 5px 0;">${url}</a>`
+                    ).join('');
+                } else {
+                    td.innerHTML = row.html || row.text;
+                }
                 td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
                 
                 tr.appendChild(th);
@@ -218,20 +227,68 @@ async function appendOverviewRowsToTable(iso) {
         // Update Biosecurity Tracker tab
         const biosecurityTrackerTable = document.querySelector('#biosecurityTracker .info-table table');
         if (biosecurityTrackerTable) {
+            // Clear any existing row7-text elements
+            const existingRow7Text = document.querySelector('.row7-text');
+            if (existingRow7Text) {
+                existingRow7Text.remove();
+            }
+
+            // First, handle row 7 as text above the table
+            const row7 = biosecurityTrackerRows.find(row => row.id === "7");
+            if (row7) {
+                const textContainer = document.createElement('div');
+                textContainer.className = 'row7-text';
+                const content = row7.html || row7.text || '';
+                textContainer.innerHTML = `
+                    <h3 style="margin-bottom: 15px; color: #333;">CSR Scorecard Guide</h3>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        ${content.split('\n').map(line => {
+                            if (line.trim()) {
+                                const [number, ...rest] = line.split('.');
+                                if (number && rest.length > 0) {
+                                    return `
+                                        <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px;">
+                                            <span style="font-weight: bold; min-width: 25px;">${number}.</span>
+                                            <span>${rest.join('.').trim()}</span>
+                                        </div>
+                                    `;
+                                }
+                            }
+                            return '';
+                        }).join('')}
+                    </div>
+                `;
+                textContainer.style.marginBottom = '20px';
+                textContainer.style.padding = '15px';
+                textContainer.style.backgroundColor = '#f8f9fa';
+                textContainer.style.borderRadius = '8px';
+                biosecurityTrackerTable.parentNode.insertBefore(textContainer, biosecurityTrackerTable);
+            }
+
+            // Then handle the remaining rows in the table
             Array.from(biosecurityTrackerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
             biosecurityTrackerRows.forEach(row => {
-                if (!row.label || (!row.html && !row.text)) {
+                // Skip row 7 as it's handled above
+                if (row.id === "7") return;
+                
+                // Skip if both label and text are missing OR there is no content to show
+                if ((!row.label && !row.text) || (!row.html && !row.text)) {
                     return;
                 }
+
                 const tr = document.createElement('tr');
                 tr.className = 'overview-extra-row';
+
                 const th = document.createElement('th');
-                th.textContent = row.label;
+                th.textContent = row.label || row.text || '';
+
                 const td = document.createElement('td');
-                td.innerHTML = row.html || row.text; // Use text if html is empty
-                // Apply color background 
+                td.innerHTML = row.html || row.text || '';
+
+                // Apply color background if provided
                 if (row.color) td.style.backgroundColor = row.color;
-                td.style.whiteSpace = 'pre-wrap'; // Preserve whitespace and line breaks
+                td.style.whiteSpace = 'pre-wrap';
+
                 tr.appendChild(th);
                 tr.appendChild(td);
                 biosecurityTrackerTable.appendChild(tr);
