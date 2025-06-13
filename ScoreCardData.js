@@ -1,49 +1,6 @@
 // newsData.js
 // Fetch and display news data for different categories from Google Sheets
 
-const NEWS_SHEET = 'ScoreCards-GBR';
-const NEWS_RANGE = 'A1:C1000'; // ID, Category, Text
-
-async function fetchNewsData(category = null, iso = null) {
-    try {
-        const response = await fetch(`/.netlify/functions/get-news-data?category=${category || ''}&iso=${iso || ''}`);
-        const data = await response.json();
-        return data.rows || [];
-    } catch (error) {
-        console.error('Error fetching news data:', error);
-        return [];
-    }
-}
-
-function renderNewsContent(rows, message = null) {
-    if (!rows.length) {
-        return `<div class="no-news">${message || 'No news available for this category.'}</div>`;
-    }
-
-    let html = '<div class="news-container">';
-    rows.forEach(row => {
-        // For government updates (from GlobalNewsArticles sheet)
-        if (row.length >= 7) { // GlobalNewsArticles format
-            html += `
-                <div class="news-item" data-id="${row[0]}">
-                    <div class="news-title">${row[0]}</div>
-                    <div class="news-description">${row[1]}</div>
-                    <div class="news-source">${row[3]}</div>
-                    <div class="news-date">${row[4]}</div>
-                </div>
-            `;
-        } else { // ScoreCards format
-            html += `
-                <div class="news-item" data-id="${row[0]}">
-                    <div class="news-text">${row[2]}</div>
-                </div>
-            `;
-        }
-    });
-    html += '</div>';
-    return html;
-}
-
 // Function to update news for a specific category
 async function updateNewsTab(iso3) {
     console.log(`Updating government news tab for country: ${iso3}`);
