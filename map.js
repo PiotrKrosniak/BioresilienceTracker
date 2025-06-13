@@ -231,10 +231,8 @@ function initializeMap() {
         styles: mapStyle,
         disableDefaultUI: true,
         zoomControl: true,
-        mapTypeControl: true,
-        mapTypeControlOptions: {
-            mapTypeIds: ['roadmap', 'hybrid']
-        }
+        mapTypeControl: false,
+        mapTypeId: 'hybrid'
     });
     console.log('Google Map initialized');
 
@@ -305,9 +303,9 @@ function initializeMap() {
                             // Style countries that have data
                             if (availableIsos.includes(countryId)) {
                                 countriesLayer.overrideStyle(feature, {
-                                    fillColor: '#4285F4',
+                                    fillColor: '#F70000',
                                     fillOpacity: 0.2,
-                                    strokeColor: '#333',
+                                    strokeColor: '#DDC709',
                                     strokeWeight: 0.1
                                 });
                             }
@@ -369,9 +367,9 @@ function addMapEventListeners() {
                 const capital = countryData.capital ? countryData.capital.join(', ') : '-';
 
                 const content = `
-                <div style="padding: 0; min-width: 150px; min-height: 150px; box-sizing: border-box; overflow: hidden;">
+                <div style="padding: 0; min-width: 200px; min-height: 200px; box-sizing: border-box; overflow: hidden;">
                     <p style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: bold;">${countryName}</p>
-                    <div id="infographic-${countryId}" style="width: 200px; height: 200px; margin: 0 auto;"></div>
+                    <div id="infographic-${countryId}" style="width: 300px; height: 300px; margin: 0 auto;"></div>
                 </div>
             `;
             
@@ -538,8 +536,8 @@ window.onload = function() {
 };
 
 function createPieChart(data, containerId) {
-    const width = 150;
-    const height = 150;
+    const width = 300;
+    const height = 300;
     const radius = Math.min(width, height) / 2;
 
     // Clear previous chart
@@ -586,16 +584,16 @@ function createPieChart(data, containerId) {
 }
 
 function createInfographic(containerId) {
-    const infographicWidth = 300;
-    const infographicHeight = 300;
+    const infographicWidth = 350;
+    const infographicHeight = 350;
     const radius = 80;
-    const labelOffset = 120;
+    const labelOffset = radius + 50;
 
     const data = [
-      { label: "Pillar I: Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71"  },
-      { label: "Pillar II: Early Warning\nand thread detection", color: "#2ecc71", triangleColor: "#3498db"},
-      { label: "Pillar III: Prevention\nand deterrence", color: "#3498db", triangleColor: "#e74c3c" },
-      { label: "Pillar IV: Readiness\nand response", color: "#e74c3c", triangleColor: "#f39c12" },
+      { label: "Pillar I: Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71", dx: -70,  dy: 0 },
+      { label: "Pillar II: Early Warning\nand thread detection", color: "#2ecc71", triangleColor: "#3498db", dx: -60, dy: 0 },
+      { label: "Pillar III: Prevention\nand deterrence", color: "#3498db", triangleColor: "#e74c3c", dx:70, dy:40 },
+      { label: "Pillar IV: Readiness\nand response", color: "#e74c3c", triangleColor: "#f39c12", dx: 40,  dy:  40 },
   ];
 
     const svg = d3.select(`#${containerId}`)
@@ -612,10 +610,8 @@ function createInfographic(containerId) {
         .endAngle(Math.PI * 3 / 2);
 
     const arcs = pie(data).map((d, i) => {
-        d.color = data[i].color;
-        d.triangleColor = data[i].triangleColor;
-        d.label = data[i].label;
-        d.icon = data[i].icon;
+        // copy visual and meta properties from the corresponding data definition
+        Object.assign(d, data[i]); // brings over color, triangleColor, label, icon, dx, dy, etc.
         return d;
     });
 
@@ -680,34 +676,22 @@ function createInfographic(containerId) {
             .append("g")
             .attr("class", "label")
             .attr("transform", d => {
-              const [x, y] = d3.arc().innerRadius(labelOffset).outerRadius(labelOffset).centroid(d);
-              const midAngle = (d.startAngle + d.endAngle) / 2;
-              const degrees = midAngle * 180 / Math.PI;
-          
-              let verticalShift = 0;
-          
-              if (degrees >= 0 && degrees < 90) {
-                  // Bottom right
-                  verticalShift = 20;
-              } else if (degrees >= 90 && degrees < 180) {
-                  // Bottom left
-                  verticalShift = 30;
-              } else if (degrees >= 180 && degrees < 270) {
-                  // Top left
-                  verticalShift = 30;
-              } else {
-                  // Top right
-                  verticalShift = 10;
-              }
-          
-              return `translate(${x},${y + verticalShift})`;
+              // Place each label on a virtual circle that is larger than the pie radius
+              const [cx, cy] = d3.arc().innerRadius(labelOffset).outerRadius(labelOffset).centroid(d);
+              // Optional fine-tuning per label – add dx / dy to the data objects if needed
+              const dx = d.dx || 0;
+              const dy = d.dy || 0;
+              return `translate(${cx + dx},${cy + dy})`;
           })
           
             .each(function (d) {
                 const group = d3.select(this);
                 const lines = d.label.split('\n');
+                // Set text-anchor based on which side of the circle the label sits
+                const midAngle = (d.startAngle + d.endAngle) / 2;
+                const anchor = (midAngle > Math.PI / 2 && midAngle < Math.PI * 3 / 2) ? "end" : "start";
                 const labelText = group.append("text")
-                    .attr("text-anchor", "middle")
+                    .attr("text-anchor", anchor)
                     .style("font-size", "14px")
                     .style("font-weight", "normal");
                 
