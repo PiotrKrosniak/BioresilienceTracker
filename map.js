@@ -592,10 +592,10 @@ function createInfographic(containerId) {
     const labelOffset = 120;
 
     const data = [
-      { label: "Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71"  },
-      { label: "Risk management\nand mitigation", color: "#2ecc71", triangleColor: "#3498db"},
-      { label: "Risk communication\nand engagement", color: "#3498db", triangleColor: "#e74c3c" },
-      { label: "Risk monitoring\nand evaluation", color: "#e74c3c", triangleColor: "#f39c12" },
+      { label: "Pillar I: Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71"  },
+      { label: "Pillar II: Early Warning\nand thread detection", color: "#2ecc71", triangleColor: "#3498db"},
+      { label: "Pillar III: Prevention\nand deterrence", color: "#3498db", triangleColor: "#e74c3c" },
+      { label: "Pillar IV: Readiness\nand response", color: "#e74c3c", triangleColor: "#f39c12" },
   ];
 
     const svg = d3.select(`#${containerId}`)
