@@ -352,6 +352,22 @@ function addMapEventListeners() {
                 return;
             }
 
+            // Compute colors for infographic from scorecard data
+            let pillarColors = ["#f39c12", "#2ecc71", "#3498db", "#e74c3c"]; // default fallback
+            try {
+                const colorRows = (scorecardData.rows || [])
+                    .filter(r => {
+                        const id = parseInt(r.id);
+                        return !isNaN(id) && id >= 8 && id <= 11 && r.color;
+                    })
+                    .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+                if (colorRows.length === 4) {
+                    pillarColors = colorRows.map(r => r.color);
+                }
+            } catch (err) {
+                console.error('Error extracting pillar colors:', err);
+            }
+
             // Fetch country data
             const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryId}`);
             const [countryData] = await response.json();
@@ -404,7 +420,7 @@ function addMapEventListeners() {
                 // Create pie chart after InfoWindow is shown
                 setTimeout(() => {
                     createPieChart(pieData, `pieChart-${countryId}`);
-                    createInfographic(`infographic-${countryId}`);
+                    createInfographic(`infographic-${countryId}`, pillarColors);
                 }, 100);
             }
         } catch (error) {
@@ -583,17 +599,20 @@ function createPieChart(data, containerId) {
         .text(d => d.data.name);
 }
 
-function createInfographic(containerId) {
+function createInfographic(containerId, pillarColors = null) {
     const infographicWidth = 350;
     const infographicHeight = 350;
     const radius = 80;
     const labelOffset = radius + 50;
 
+    const defaultColors = ["#f39c12", "#2ecc71", "#3498db", "#e74c3c"];
+    const colors = (Array.isArray(pillarColors) && pillarColors.length === 4) ? pillarColors : defaultColors;
+
     const data = [
-      { label: "Pillar I: Risk awareness\nand understanding", color: "#f39c12", triangleColor: "#2ecc71", dx: -70,  dy: 0 },
-      { label: "Pillar II: Early Warning\nand thread detection", color: "#2ecc71", triangleColor: "#3498db", dx: -60, dy: 0 },
-      { label: "Pillar III: Prevention\nand deterrence", color: "#3498db", triangleColor: "#e74c3c", dx:70, dy:40 },
-      { label: "Pillar IV: Readiness\nand response", color: "#e74c3c", triangleColor: "#f39c12", dx: 40,  dy:  40 },
+      { label: "Pillar I: Risk awareness\nand understanding", color: colors[0], triangleColor: colors[1], dx: -70,  dy: 0 },
+      { label: "Pillar II: Early Warning\nand thread detection", color: colors[1], triangleColor: colors[2], dx: -60, dy: 0 },
+      { label: "Pillar III: Prevention\nand deterrence", color: colors[2], triangleColor: colors[3], dx:70, dy:40 },
+      { label: "Pillar IV: Readiness\nand response", color: colors[3], triangleColor: colors[0], dx: 40,  dy:  40 },
   ];
 
     const svg = d3.select(`#${containerId}`)
