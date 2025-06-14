@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Global Bioresilience Tracker</title>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="animalOutbreak.js"></script>
-  <script src="news.js"></script>
-  <script src="https://apis.google.com/js/api.js"></script>
-  <script src="map.js"></script>
-  <script src="ScoreCardData.js"></script>
+  <link rel="preconnect" href="https://maps.googleapis.com">
+   <link rel="preconnect" href="https://d3js.org">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+  <script src="https://d3js.org/d3.v7.min.js" defer></script>
+  <script src="animalOutbreak.js" defer></script>
+  <script src="https://apis.google.com/js/api.js" defer></script>
+  <script src="map.js" defer></script>
+  <script src="ScoreCardData.js" defer></script>
   <script>
     // Load Google Maps API with key from server
     function loadGoogleMapsAPI() {
@@ -64,6 +65,10 @@
         mapDiv.innerHTML = '<div style="padding: 20px; text-align: center;">Error: Google Maps authentication failed. Please check your API key.</div>';
       }
     };
+
+    document.getElementById('map').addEventListener('pointerdown', () => {
+        if (!window.google) { loadGoogleMapsAPI(); }
+    }, { once: true });
   </script>
 
   
