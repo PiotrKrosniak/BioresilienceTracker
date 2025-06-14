@@ -97,8 +97,8 @@ async function appendOverviewRowsToTable(iso) {
         });
         const biosecurityTrackerRows = rows.filter(row => {
             const id = parseInt(row.id);
-            // Include rows 7 through 11 (inclusive) in the Biosecurity Tracker tab
-            return !isNaN(id) && id >= 7 && id <= 11;
+            // Include rows 7 through 11 (inclusive) but exclude object with id "4"
+            return !isNaN(id) && id >= 7 && id <= 11 && row.id !== "4";
         });
         const resourcesRow = rows.find(row => row.id === "12");
 
@@ -145,7 +145,7 @@ async function appendOverviewRowsToTable(iso) {
             console.log('Processing biosecurityExplainerRows:', biosecurityExplainerRows);
             biosecurityExplainerRows.forEach(row => {
                 // Skip if both label and text are empty
-                if (!row.label && !row.text) {
+                if (!row.label && !row.text || row.label === "National\nCapabilities Map\n& Capability\nDirectory") {
                     return;
                 }
 
