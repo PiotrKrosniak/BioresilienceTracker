@@ -190,37 +190,37 @@ async function appendOverviewRowsToTable(iso) {
                 existingRow7Text.remove();
             }
 
-            // First, handle row 7 as text above the table
-            const row7 = biosecurityTrackerRows.find(row => row.id === "7");
-            if (row7) {
-                const textContainer = document.createElement('div');
-                textContainer.className = 'row7-text';
-                const content = row7.html || row7.text || '';
-                textContainer.innerHTML = `
-                    <h3 style="margin-bottom: 15px; color: #333;">CSR Scorecard Guide</h3>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        ${content.split('\n').map(line => {
-                            if (line.trim()) {
-                                const [number, ...rest] = line.split('.');
-                                if (number && rest.length > 0) {
-                                    return `
-                                        <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px;">
-                                            <span style="font-weight: bold; min-width: 25px;">${number}.</span>
-                                            <span>${rest.join('.').trim()}</span>
-                                        </div>
-                                    `;
-                                }
-                            }
-                            return '';
-                        }).join('')}
-                    </div>
-                `;
-                textContainer.style.marginBottom = '20px';
-                textContainer.style.padding = '15px';
-                textContainer.style.backgroundColor = '#f8f9fa';
-                textContainer.style.borderRadius = '8px';
-                biosecurityTrackerTable.parentNode.insertBefore(textContainer, biosecurityTrackerTable);
-            }
+            // // First, handle row 7 as text above the table
+            // const row7 = biosecurityTrackerRows.find(row => row.id === "7");
+            // if (row7) {
+            //     const textContainer = document.createElement('div');
+            //     textContainer.className = 'row7-text';
+            //     const content = row7.html || row7.text || '';
+            //     textContainer.innerHTML = `
+            //         <h3 style="margin-bottom: 15px; color: #333;">CSR Scorecard Guide</h3>
+            //         <div style="display: flex; flex-direction: column; gap: 10px;">
+            //             ${content.split('\n').map(line => {
+            //                 if (line.trim()) {
+            //                     const [number, ...rest] = line.split('.');
+            //                     if (number && rest.length > 0) {
+            //                         return `
+            //                             <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px;">
+            //                                 <span style="font-weight: bold; min-width: 25px;">${number}.</span>
+            //                                 <span>${rest.join('.').trim()}</span>
+            //                             </div>
+            //                         `;
+            //                     }
+            //                 }
+            //                 return '';
+            //             }).join('')}
+            //         </div>
+            //     `;
+            //     textContainer.style.marginBottom = '20px';
+            //     textContainer.style.padding = '15px';
+            //     textContainer.style.backgroundColor = '#f8f9fa';
+            //     textContainer.style.borderRadius = '8px';
+            //     biosecurityTrackerTable.parentNode.insertBefore(textContainer, biosecurityTrackerTable);
+            // }
 
             // Then handle the remaining rows in the table
             Array.from(biosecurityTrackerTable.querySelectorAll('.overview-extra-row')).forEach(row => row.remove());
@@ -243,7 +243,7 @@ async function appendOverviewRowsToTable(iso) {
                 td.innerHTML = row.html || row.text || '';
 
                 // Apply color background if provided
-                if (row.color) td.style.backgroundColor = row.color;
+                // if (row.color) td.style.backgroundColor = row.color;
                 td.style.whiteSpace = 'pre-wrap';
 
                 tr.appendChild(th);

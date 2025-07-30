@@ -237,10 +237,10 @@ function initializeMap() {
     console.log('Google Map initialized');
 
     // Create InfoWindow
-    infoWindow = new google.maps.InfoWindow({
-        disableAutoPan: true,
-        pixelOffset: new google.maps.Size(0, -10)
-    });
+    // infoWindow = new google.maps.InfoWindow({
+    //     disableAutoPan: true,
+    //     pixelOffset: new google.maps.Size(0, -10)
+    // });
 
     console.log('Fetching GeoJSON data...');
     // Load local GeoJSON data
@@ -396,17 +396,17 @@ function addMapEventListeners() {
                 const center = bounds.getCenter();
 
                 // Show InfoWindow
-                infoWindow.setContent(content);
-                infoWindow.setPosition(center);
-                infoWindow.open(map);
-                google.maps.event.addListenerOnce(infoWindow, 'domready', function() {
-                  setTimeout(() => {
-                      const iwCloseBtn = document.querySelector('.gm-ui-hover-effect');
-                      if (iwCloseBtn) {
-                          iwCloseBtn.style.display = 'none';
-                      }
-                  }, 100); // 50ms delay gives browser time to render
-              });
+                // infoWindow.setContent(content);
+                // infoWindow.setPosition(center);
+                // infoWindow.open(map);
+                // google.maps.event.addListenerOnce(infoWindow, 'domready', function() {
+                //   setTimeout(() => {
+                //       const iwCloseBtn = document.querySelector('.gm-ui-hover-effect');
+                //       if (iwCloseBtn) {
+                //           iwCloseBtn.style.display = 'none';
+                //       }
+                //   }, 100); // 50ms delay gives browser time to render
+                // });
               
                
 
@@ -430,7 +430,7 @@ function addMapEventListeners() {
 
     // Add mouseout event
     countriesLayer.addListener('mouseout', (event) => {
-        infoWindow.close();
+        // infoWindow.close();
     });
 
     // Add click event

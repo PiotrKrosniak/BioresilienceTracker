@@ -69,6 +69,75 @@
     document.getElementById('map').addEventListener('pointerdown', () => {
         if (!window.google) { loadGoogleMapsAPI(); }
     }, { once: true });
+
+    // Fullscreen functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+        }
+
+        // Check if we're in an iframe
+        function isInIframe() {
+            try {
+                return window !== window.top;
+            } catch (e) {
+                return true;
+            }
+        }
+
+        // Toggle fullscreen mode
+        function toggleFullscreen() {
+            if (isInIframe()) {
+                // If in iframe, request parent to go fullscreen
+                try {
+                    window.parent.postMessage({
+                        type: 'TOGGLE_FULLSCREEN',
+                        url: window.location.href
+                    }, '*');
+                } catch (e) {
+                    console.error('Error sending fullscreen message:', e);
+                }
+            } else {
+                // If not in iframe, use browser fullscreen API
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.error('Error attempting to enable fullscreen:', err);
+                    });
+                } else {
+                    document.exitFullscreen().catch(err => {
+                        console.error('Error attempting to exit fullscreen:', err);
+                    });
+                }
+            }
+        }
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', updateFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+
+        function updateFullscreenButton() {
+            const isFullscreen = document.fullscreenElement || 
+                               document.webkitFullscreenElement || 
+                               document.mozFullScreenElement || 
+                               document.msFullscreenElement;
+            
+            if (fullscreenBtn) {
+                fullscreenBtn.innerHTML = isFullscreen ? 
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>' :
+                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>';
+                fullscreenBtn.title = isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen';
+            }
+        }
+
+        // Hide fullscreen button if not in iframe (optional)
+        if (!isInIframe()) {
+            fullscreenBtn.style.display = 'none';
+        }
+    });
   </script>
 
   
@@ -92,6 +161,35 @@
     .header h1 {
       margin: 0;
       font-size: 1.5rem;
+    }
+    .header {
+      position: relative;
+    }
+    .fullscreen-btn {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .fullscreen-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .fullscreen-btn svg {
+      transition: transform 0.3s ease;
+    }
+    .fullscreen-btn:hover svg {
+      transform: scale(1.1);
     }
     .map-container {
       flex: 1;
@@ -437,6 +535,11 @@
 <body>
   <div class="header">
     <h1>Global Bioresilience Tracker</h1>
+    <button id="fullscreenBtn" class="fullscreen-btn" title="Toggle Fullscreen">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+      </svg>
+    </button>
   </div>
   <div class="map-container">
     <div id="map"></div>
@@ -474,14 +577,6 @@
     </div>
     </div>
     <div id="biosecurityTracker" class="tab-content">
-        <table style="width: 100%; margin: 0 auto 20px auto;">
-            <tr>
-                <td style="background-color: #93C47D; width: 25%; font-size: 10px; text-align: center; padding: 5px;">Achieved</td>
-                <td style="background-color: #D9EAD3; width: 25%; font-size: 10px; text-align: center; padding: 5px;">Sustained Positive Action</td>
-                <td style="background-color: #FCE5CD; width: 25%; font-size: 10px; text-align: center; padding: 5px;">Partial Action</td>
-                <td style="background-color: #F29B9B; width: 25%; font-size: 10px; text-align: center; padding: 5px;">Undesirable Action</td>
-            </tr>
-        </table>
       <div class="info-table">
         <table>
             <!-- Content will be injected here -->
@@ -505,7 +600,7 @@
   </div>
 
   <!-- Modal for Global Biosecurity Accelerator: Bioresilience Tracker -->
-  <div id="bioModal" class="modal-overlay" style="display: flex;">
+  <!-- <div id="bioModal" class="modal-overlay" style="display: flex;">
     <div class="modal-content">
       <button class="modal-close" id="closeModal">&times;</button>
       <h2>Global Biosecurity Accelerator: Bioresilience Tracker</h2>
@@ -522,7 +617,7 @@
         <li><strong>Pillar IV: Readiness and response.</strong> A nation's ability to respond immediately and effectively to potential biothreats or ongoing biological emergencies whilst building longer-term preparedness and restoring the community, the economy, and the environment after the emergency.</li>
       </ul>
     </div>
-  </div>
+  </div> -->
 
   <!-- Add modal close script -->
   <script>
