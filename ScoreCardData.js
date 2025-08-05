@@ -89,7 +89,7 @@ async function appendOverviewRowsToTable(iso) {
         // Split rows based on ID 
         const overviewRows = rows.filter(row => {
             const id = parseInt(row.id);
-            return !isNaN(id) && (id === 1 || id === 2 || id === 3 || id === 5 || id === 12);
+            return !isNaN(id) && (id === 1 || id === 2 || id === 3 || id === 12);
         });
         const biosecurityExplainerRows = rows.filter(row => {
             const id = parseInt(row.id);
