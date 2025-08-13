@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>World Map Zoom Demo</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson@3"></script>
   <!-- Data and helpers reused from the original index.html implementation -->
   <script src="ScoreCardData.js" defer></script>
   <style>
@@ -126,10 +127,16 @@
       border-bottom: 1px solid #dee2e6;
       font-size: 13px; /* Smaller font */
       white-space: pre-wrap; /* Preserve whitespace and line breaks */
+      background: #fff; /* default white */
     }
-    
+    /* First column styling */
+    .country-table td:first-child {
+       background: #f5f5f5;
+       font-weight: 600;
+    }
+    /* Disable hover effect */
     .country-table tr:hover {
-      background: #f8f9fa;
+       background: inherit;
     }
     
     /* Tab styles */
@@ -807,7 +814,6 @@
     /* ------------------------------------------------------------------ */
   </script>
 
-  <!-- TopoJSON dependency -->
-  <script src="https://unpkg.com/topojson@3"></script>
+  <!-- TopoJSON script moved to head -->
 </body>
 </html>
