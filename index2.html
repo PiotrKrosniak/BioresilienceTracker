@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>World Map Zoom Demo</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- Data and helpers reused from the original index.html implementation -->
+  <script src="ScoreCardData.js" defer></script>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    svg { width: 100vw; height: 100vh; background: #f4f4f4; }
+    .tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 12px;
+      display: none;
+      pointer-events: none;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 6px;
+      width: 100%;
+    }
+    td, th {
+      border: 1px solid #ccc;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    
+    /* New styles for country detail view */
+    .country-detail {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: white;
+      opacity: 0;
+      visibility: hidden;
+      z-index: 1000;
+      padding: 20px;
+      box-sizing: border-box;
+      transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
+    }
+    
+    .country-detail.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      z-index: 1001;
+      opacity: 0;
+      transform: translateX(-20px);
+      transition: opacity 0.6s ease-out 0.4s, transform 0.6s ease-out 0.4s;
+    }
+    
+    .back-button.active {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .back-button:hover {
+      background: #0056b3;
+    }
+    
+    .country-info {
+      margin-top: 80px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s ease-out 0.2s, transform 0.8s ease-out 0.2s;
+    }
+    
+    .country-info.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .country-name {
+      font-size: 48px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    
+    .country-table {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    
+    .country-table table {
+      width: 100%;
+      border: none;
+    }
+    
+    .country-table th {
+      background: #f8f9fa;
+      padding: 15px;
+      font-weight: bold;
+      color: #333;
+      border: none;
+      border-bottom: 2px solid #dee2e6;
+      font-size: 14px; /* Smaller font */
+    }
+    
+    .country-table td {
+      padding: 15px;
+      border: none;
+      border-bottom: 1px solid #dee2e6;
+      font-size: 13px; /* Smaller font */
+      white-space: pre-wrap; /* Preserve whitespace and line breaks */
+    }
+    
+    .country-table tr:hover {
+      background: #f8f9fa;
+    }
+    
+    /* Tab styles */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e9ecef;
+    }
+    
+    .tab {
+      padding: 12px 24px;
+      background: #f8f9fa;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #6c757d;
+      border-radius: 8px 8px 0 0;
+      margin-right: 4px;
+      transition: all 0.3s ease;
+    }
+    
+    .tab:hover {
+      background: #e9ecef;
+      color: #495057;
+    }
+    
+    .tab.active {
+      background: #007bff;
+      color: white;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Country contour styles */
+    .country-contour {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      width: 300px;
+      height: 300px;
+      z-index: 999;
+      opacity: 0;
+      transition: transform 0.8s ease-out, opacity 0.8s ease-out;
+    }
+    
+    .country-contour.active {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+    
+    .country-contour svg {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+    
+    .country-contour path {
+      fill: #e3f2fd;
+      stroke: #1976d2;
+      stroke-width: 2;
+    }
+    
+    /* Organization filter buttons */
+    .org-buttons {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 1002;
+    }
+    
+    .org-button {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #007bff;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #007bff;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    
+    .org-button:hover {
+      background: #007bff;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+    
+    .org-button.active {
+      background: #007bff;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+    /* Scrollable content inside table cells */
+    .cell-content {
+        max-height: 300px;
+        overflow-y: auto;
+        /* add slight padding for readability */
+        padding-right: 4px;
+    }
+    /* Disable per-row scrollbars */
+    .cell-scroll {
+        overflow: visible;
+        max-height: none;
+        padding-right: 0;
+        white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="tooltip" class="tooltip"></div>
+  
+  <!-- Organization filter buttons -->
+  <div class="org-buttons">
+    <button class="org-button" data-org="nato">NATO</button>
+    <button class="org-button" data-org="eu">European Union</button>
+  </div>
+  
+  <svg id="world-map"></svg>
+  
+  <!-- Country detail view -->
+  <div id="country-detail" class="country-detail">
+    <button class="back-button" onclick="showWorldMap()">← Back to World Map</button>
+    
+    <!-- Country contour -->
+    <div id="country-contour" class="country-contour"></div>
+    
+    <div class="country-info">
+      <div id="country-name" class="country-name"></div>
+      <div class="country-table">
+        <div class="tabs">
+          <div class="tab active" data-tab="general">Biosecurity Overview</div>
+          <div class="tab" data-tab="economy">National Capabilities Map</div>
+          <div class="tab" data-tab="demographics">Bioresilience Assessment</div>
+          <div class="tab" data-tab="health">Government Tracked Biological Incidents</div>
+        </div>
+        
+        <div class="tab-content active" id="general-content">
+          <table id="general-table">
+            <thead>
+             
+            </thead>
+            <tbody id="general-data-body">
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="tab-content" id="economy-content">
+          <table id="economy-table">
+            <thead></thead>
+            <tbody id="economy-data-body">
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="tab-content" id="demographics-content">
+          <table id="demographics-table">
+            <thead></thead>
+            <tbody id="demographics-data-body">
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="tab-content" id="health-content">
+          <table id="health-table">
+            <thead></thead>
+            <tbody id="health-data-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const svg = d3.select("#world-map");
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const g = svg.append("g");
+    const tooltip = d3.select("#tooltip");
+    const countryDetail = d3.select("#country-detail");
+
+    const projection = d3.geoMercator().scale(130).translate([width / 2, height / 1.5]);
+    const path = d3.geoPath().projection(projection);
+
+    // Organization membership data
+    const organizationData = {
+      nato: [
+        "Albania", "Belgium", "Bulgaria", "Canada", "Croatia", "Czech Republic", 
+        "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", 
+        "Iceland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Montenegro", 
+        "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", 
+        "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "United Kingdom", "United States"
+      ],
+      eu: [
+        "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", 
+        "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", 
+        "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta", "Netherlands", 
+        "Poland", "Portugal", "Romania", "Slovakia", "Slovenia", "Spain", "Sweden"
+      ]
+    };
+
+    // Sample country-specific data organized by tabs (replace with real API or data later)
+    const countryData = {
+      "United Kingdom": {
+        share: "2.5%",
+        general: [
+          { metric: "Capital", value: "London" },
+          { metric: "Currency", value: "British Pound" },
+          { metric: "Language", value: "English" },
+          { metric: "Government", value: "Constitutional Monarchy" }
+        ],
+        economy: [
+          { metric: "GDP", value: "$3.1T" },
+          { metric: "GDP per capita", value: "$46,200" },
+          { metric: "Unemployment", value: "4.2%" },
+          { metric: "Inflation", value: "2.1%" }
+        ],
+        demographics: [
+          { metric: "Population", value: "67 million" },
+          { metric: "Population density", value: "275/km²" },
+          { metric: "Median age", value: "40.5 years" },
+          { metric: "Life expectancy", value: "81.2 years" }
+        ],
+        health: [
+          { metric: "Healthcare spending", value: "10.2% of GDP" },
+          { metric: "Doctors per 1000", value: "2.8" },
+          { metric: "Hospital beds per 1000", value: "2.5" },
+          { metric: "COVID-19 cases", value: "24.5M" }
+        ]
+      },
+      "United States": {
+        share: "4.2%",
+        general: [
+          { metric: "Capital", value: "Washington D.C." },
+          { metric: "Currency", value: "US Dollar" },
+          { metric: "Language", value: "English" },
+          { metric: "Government", value: "Federal Republic" }
+        ],
+        economy: [
+          { metric: "GDP", value: "$21.4T" },
+          { metric: "GDP per capita", value: "$64,800" },
+          { metric: "Unemployment", value: "3.7%" },
+          { metric: "Inflation", value: "3.1%" }
+        ],
+        demographics: [
+          { metric: "Population", value: "331 million" },
+          { metric: "Population density", value: "36/km²" },
+          { metric: "Median age", value: "38.5 years" },
+          { metric: "Life expectancy", value: "78.9 years" }
+        ],
+        health: [
+          { metric: "Healthcare spending", value: "18.3% of GDP" },
+          { metric: "Doctors per 1000", value: "2.6" },
+          { metric: "Hospital beds per 1000", value: "2.9" },
+          { metric: "COVID-19 cases", value: "103.4M" }
+        ]
+      },
+      "Germany": {
+        share: "1.1%",
+        general: [
+          { metric: "Capital", value: "Berlin" },
+          { metric: "Currency", value: "Euro" },
+          { metric: "Language", value: "German" },
+          { metric: "Government", value: "Federal Republic" }
+        ],
+        economy: [
+          { metric: "GDP", value: "$4.2T" },
+          { metric: "GDP per capita", value: "$50,800" },
+          { metric: "Unemployment", value: "3.0%" },
+          { metric: "Inflation", value: "2.3%" }
+        ],
+        demographics: [
+          { metric: "Population", value: "83 million" },
+          { metric: "Population density", value: "232/km²" },
+          { metric: "Median age", value: "45.7 years" },
+          { metric: "Life expectancy", value: "81.3 years" }
+        ],
+        health: [
+          { metric: "Healthcare spending", value: "11.7% of GDP" },
+          { metric: "Doctors per 1000", value: "4.2" },
+          { metric: "Hospital beds per 1000", value: "8.0" },
+          { metric: "COVID-19 cases", value: "38.2M" }
+        ]
+      },
+      "France": {
+        share: "0.9%",
+        general: [
+          { metric: "Capital", value: "Paris" },
+          { metric: "Currency", value: "Euro" },
+          { metric: "Language", value: "French" },
+          { metric: "Government", value: "Semi-Presidential Republic" }
+        ],
+        economy: [
+          { metric: "GDP", value: "$2.9T" },
+          { metric: "GDP per capita", value: "$43,600" },
+          { metric: "Unemployment", value: "7.4%" },
+          { metric: "Inflation", value: "2.8%" }
+        ],
+        demographics: [
+          { metric: "Population", value: "67 million" },
+          { metric: "Population density", value: "119/km²" },
+          { metric: "Median age", value: "41.4 years" },
+          { metric: "Life expectancy", value: "82.7 years" }
+        ],
+        health: [
+          { metric: "Healthcare spending", value: "11.1% of GDP" },
+          { metric: "Doctors per 1000", value: "3.3" },
+          { metric: "Hospital beds per 1000", value: "5.9" },
+          { metric: "COVID-19 cases", value: "39.8M" }
+        ]
+      }
+    };
+
+    // Load world geoJSON
+    d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(worldData => {
+      const countries = topojson.feature(worldData, worldData.objects.countries).features;
+
+      const countryNames = new Map(); // Mapping country ids to names
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(namesData => {
+        countries.forEach(d => {
+          d.name = d.properties.name || "Unknown";
+        });
+      });
+
+      g.selectAll("path")
+        .data(countries)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", "#dcdcdc")
+        .attr("stroke", "#555")
+        .on("click", function(event, d) {
+          const countryName = d.properties.name;
+          if (countryData[countryName]) {
+            showCountryDetail(countryName);
+          } else {
+            // For countries without data, still zoom but show basic info
+            showCountryDetail(countryName, true);
+          }
+        });
+      
+      // Store countries reference for filtering
+      window.countries = countries;
+    });
+
+    // Add organization button functionality
+    d3.selectAll(".org-button").on("click", function() {
+      const org = this.getAttribute("data-org");
+      const isActive = d3.select(this).classed("active");
+      
+      // Toggle button state
+      d3.selectAll(".org-button").classed("active", false);
+      if (!isActive) {
+        d3.select(this).classed("active", true);
+      }
+      
+      // Update map colors based on organization
+      updateMapColors(org, !isActive);
+    });
+
+    function updateMapColors(org, show) {
+      if (!show || !org) {
+        // Reset to default colors
+        g.selectAll("path")
+          .attr("fill", "#dcdcdc")
+          .attr("stroke", "#555");
+        return;
+      }
+      
+      const memberCountries = organizationData[org];
+      
+      g.selectAll("path")
+        .attr("fill", function(d) {
+          const countryName = d.properties.name;
+          if (memberCountries.includes(countryName)) {
+            return org === "nato" ? "#4CAF50" : "#2196F3"; // Green for NATO, Blue for EU
+          }
+          return "#dcdcdc";
+        })
+        .attr("stroke", function(d) {
+          const countryName = d.properties.name;
+          if (memberCountries.includes(countryName)) {
+            return org === "nato" ? "#2E7D32" : "#1976D2"; // Darker green/blue for borders
+          }
+          return "#555";
+        });
+    }
+
+    function showCountryDetail(countryName, hasData = false) {
+      // Set country name
+      d3.select("#country-name").text(countryName);
+      
+      // Create country contour
+      createCountryContour(countryName);
+      
+      // Populate data for all tabs
+      // Dynamically fetch ISO codes and populate all tabs
+      fetchAndPopulateCountryData(countryName);
+       
+      // Add tab switching functionality
+      setupTabSwitching();
+      
+      // Smooth transition to country detail view
+      svg.transition()
+        .duration(600)
+        .style("opacity", 0)
+        .on("end", function() {
+          svg.style("display", "none");
+          
+          // Show country detail view with smooth transition
+          countryDetail.style("display", "block");
+          
+          // Trigger animations with slight delays for staggered effect
+          setTimeout(() => {
+            countryDetail.classed("active", true);
+          }, 50);
+          
+          setTimeout(() => {
+            d3.select("#country-contour").classed("active", true);
+          }, 200);
+          
+          setTimeout(() => {
+            d3.select(".country-info").classed("active", true);
+          }, 400);
+          
+          setTimeout(() => {
+            d3.select(".back-button").classed("active", true);
+          }, 600);
+        });
+    }
+
+    function createCountryContour(countryName) {
+      // Clear existing contour
+      d3.select("#country-contour").html("");
+      
+      // Find the country data from the world map
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(worldData => {
+        const countries = topojson.feature(worldData, worldData.objects.countries).features;
+        const selectedCountry = countries.find(d => d.properties.name === countryName);
+        
+        if (selectedCountry) {
+          // Create a new SVG for the contour
+          const contourSvg = d3.select("#country-contour")
+            .append("svg")
+            .attr("width", 300)
+            .attr("height", 300);
+          
+          // Create a projection for the contour (centered on the country)
+          const [[x0, y0], [x1, y1]] = path.bounds(selectedCountry);
+          const dx = x1 - x0;
+          const dy = y1 - y0;
+          const x = (x0 + x1) / 2;
+          const y = (y0 + y1) / 2;
+          const scale = Math.min(250 / dx, 250 / dy);
+          const translate = [150 - scale * x, 150 - scale * y];
+          
+          // Create a new path generator for the contour
+          const contourProjection = d3.geoMercator()
+            .scale(scale * 130)
+            .translate(translate);
+          const contourPath = d3.geoPath().projection(contourProjection);
+          
+          // Draw the country contour
+          contourSvg.append("path")
+            .datum(selectedCountry)
+            .attr("d", contourPath)
+            .attr("fill", "#e3f2fd")
+            .attr("stroke", "#1976d2")
+            .attr("stroke-width", 2);
+        }
+      });
+    }
+
+    function populateTabData(countryName, hasData) {
+      const tabCategories = ['general', 'economy', 'demographics', 'health'];
+      
+      tabCategories.forEach(category => {
+        const tableBody = d3.select(`#${category}-data-body`);
+        tableBody.html("");
+        
+        if (hasData && countryData[countryName] && countryData[countryName][category]) {
+          // Add data rows for this category
+          countryData[countryName][category].forEach(row => {
+            const tr = tableBody.append("tr");
+            const labelContent = useDHtml && row.html && row.html.includes('<a') ? row.html : (row.label || row.text || '-');
+            tr.append("td").html(labelContent);
+            const baseHtml = useDHtml ? (row.dHtml || row.dText || row.html || row.text || "-") : (row.html || row.text || "-");
+            tr.append("td").html(baseHtml);
+          });
+        } else {
+          // Show placeholder data for countries without specific data
+          const placeholderData = [
+            { metric: "Data", value: "Not available" },
+            { metric: "Information", value: "Not available" },
+            { metric: "Statistics", value: "Not available" }
+          ];
+          
+          placeholderData.forEach(row => {
+            const tr = tableBody.append("tr");
+            tr.append("td").text(row.metric);
+            tr.append("td").text(row.value);
+          });
+        }
+      });
+    }
+
+    function setupTabSwitching() {
+      // Remove existing event listeners
+      d3.selectAll(".tab").on("click", null);
+      
+      // Add new event listeners
+      d3.selectAll(".tab").on("click", function() {
+        const tabName = this.getAttribute("data-tab");
+        
+        // Remove active class from all tabs and content
+        d3.selectAll(".tab").classed("active", false);
+        d3.selectAll(".tab-content").classed("active", false);
+        
+        // Add active class to clicked tab and corresponding content
+        d3.select(this).classed("active", true);
+        d3.select(`#${tabName}-content`).classed("active", true);
+      });
+    }
+
+    function showWorldMap() {
+      // Remove active classes to trigger exit animations
+      countryDetail.classed("active", false);
+      d3.select("#country-contour").classed("active", false);
+      d3.select(".country-info").classed("active", false);
+      d3.select(".back-button").classed("active", false);
+      
+      // Wait for exit animations to complete, then show world map
+      setTimeout(() => {
+        countryDetail.style("display", "none");
+        
+        // Show world map with fade-in effect
+        svg.style("display", "block")
+          .style("opacity", 0);
+        
+        svg.transition()
+          .duration(600)
+          .style("opacity", 1)
+          .on("end", function() {
+            // Reset zoom with smooth transition
+            g.transition()
+              .duration(750)
+              .attr("transform", "translate(0,0) scale(1)");
+          });
+      }, 600);
+    }
+
+    function showTooltip(x, y, country) {
+      const name = country.properties.name;
+      const data = countryData[name];
+      if (!data) return;
+
+      let html = `<strong>${name}</strong><br>Share: ${data.share}<br><br>`;
+      html += `<table><tr><th>Metric</th><th>Value</th></tr>`;
+      data.stats.forEach(row => {
+        html += `<tr><td>${row.metric}</td><td>${row.value}</td></tr>`;
+      });
+      html += `</table>`;
+
+      tooltip.html(html)
+        .style("left", (x + 10) + "px")
+        .style("top", (y + 10) + "px")
+        .style("display", "block");
+    }
+
+    svg.on("click", () => {
+      tooltip.style("display", "none");
+    });
+
+    /* ------------------------------------------------------------------
+       *  Dynamic data helpers – reuse existing Netlify functions
+       * ----------------------------------------------------------------*/
+
+    async function fetchCountryCodes(name) {
+      try {
+        const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=cca2,cca3`);
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          return { iso2: data[0].cca2, iso3: data[0].cca3 };
+        }
+      } catch (err) {
+        console.error('Error fetching country codes:', err);
+      }
+      return { iso2: null, iso3: null };
+    }
+
+    async function fetchAndPopulateCountryData(countryName) {
+      const { iso2, iso3 } = await fetchCountryCodes(countryName);
+      if (iso3) {
+        await populateScorecardTabs(iso3);
+      }
+      if (iso2) {
+        await populateNewsTab(iso2);
+      }
+    }
+
+    async function populateScorecardTabs(iso3) {
+      try {
+        const res = await fetch(`/.netlify/functions/get-scorecard-data?iso=${iso3}`);
+        const { rows = [] } = await res.json();
+
+        // Categorise rows similar to original logic
+        const overviewRows = rows.filter(r => { const id = parseInt(r.id); return !isNaN(id) && (id === 1 || id === 2 || id === 3 || id === 12); });
+        const explainerRows = rows.filter(r => {
+          const id = parseInt(r.id);
+          return (r.id === null) || (!isNaN(id) && id === 6);
+        });
+        const trackerRows = rows.filter(r => {
+          const id = parseInt(r.id);
+          return !isNaN(id) && id >= 7 && id <= 11 && r.id !== "4";
+        });
+
+        // Helper to append rows to tbody
+        const addRows = (selection, dataRows, useDHtml = false) => {
+          selection.html("");
+          dataRows.forEach(row => {
+            if ((!row.label && !row.text) && (!row.html && !row.dHtml)) return;
+            const tr = selection.append("tr");
+            const labelContent = useDHtml && row.html && row.html.includes('<a') ? row.html : (row.label || row.text || '-');
+            tr.append("td").html(labelContent);
+            const baseHtml = useDHtml ? (row.dHtml || row.dText || row.html || row.text || "-") : (row.html || row.text || "-");
+            tr.append("td").html(baseHtml);
+          });
+        };
+
+        addRows(d3.select("#general-data-body"), overviewRows);
+        addRows(d3.select("#economy-data-body"), explainerRows, true);
+        addRows(d3.select("#demographics-data-body"), trackerRows);
+      } catch (err) {
+        console.error('Error populating scorecard tabs:', err);
+      }
+    }
+
+    async function populateNewsTab(iso2) {
+      try {
+        const res = await fetch(`/.netlify/functions/get-country-data?iso=${iso2}`);
+        const data = await res.json();
+        const tbody = d3.select("#health-data-body");
+        tbody.html("");
+
+        if (data && data.outbreaks && data.outbreaks.length) {
+          data.outbreaks.forEach(ob => {
+            const tr = tbody.append("tr");
+            tr.append("td").text(ob.date);
+            tr.append("td").text(ob.disease);
+            tr.append("td").text(ob.numberOfLocations);
+            tr.append("td").text(ob.reportDate);
+          });
+        } else {
+          const tr = tbody.append("tr");
+          tr.append("td").attr("colspan", 2).text("No outbreak data available for this country.");
+        }
+      } catch (err) {
+        console.error('Error populating news tab:', err);
+      }
+    }
+
+    /* ------------------------------------------------------------------ */
+  </script>
+
+  <!-- TopoJSON dependency -->
+  <script src="https://unpkg.com/topojson@3"></script>
+</body>
+</html>
