@@ -44,6 +44,8 @@
       z-index: 1000;
       padding: 20px;
       box-sizing: border-box;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
       transition: opacity 0.6s ease-in-out, visibility 0.6s ease-in-out;
     }
     
@@ -109,31 +111,60 @@
     .country-table table {
       width: 100%;
       border: none;
+      table-layout: fixed; /* Fixed table layout for better control */
     }
     
     .country-table th {
-      background: #f8f9fa;
+      background: #f5f5f5;
       padding: 15px;
       font-weight: bold;
       color: #333;
       border: none;
       border-bottom: 2px solid #dee2e6;
-      font-size: 14px; /* Smaller font */
+      font-size: 14px;
+      width: 20%; /* Match index.html first column width */
     }
     
     .country-table td {
       padding: 15px;
       border: none;
       border-bottom: 1px solid #dee2e6;
-      font-size: 13px; /* Smaller font */
-      white-space: pre-wrap; /* Preserve whitespace and line breaks */
-      background: #fff; /* default white */
+      font-size: 13px;
+      white-space: normal; /* Allow text to wrap naturally */
+      word-wrap: break-word; /* Break long words/URLs */
+      overflow-wrap: break-word; /* Modern browser support */
+      max-width: 0; /* Force text wrapping in table cells */
+      background: #fff;
+      vertical-align: top;
     }
-    /* First column styling */
-    .country-table td:first-child {
-       background: #f5f5f5;
-       font-weight: 600;
+    
+    /* Apply two-column width only to specific tables, not the 4-col health table */
+    #general-table td:last-child,
+    #economy-table td:last-child,
+    #demographics-table td:last-child {
+      width: 80%;
+      white-space: pre-wrap; /* Preserve newlines and wrap long lines */
     }
+    
+    /* Custom scrollbar styling for table cells */
+    .country-table td::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .country-table td::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    .country-table td::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    .country-table td::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    /* First column styling handled by th above */
     /* Disable hover effect */
     .country-table tr:hover {
        background: inherit;
@@ -143,7 +174,7 @@
     .tabs {
       display: flex;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 0; /* Remove bottom margin */
       border-bottom: 2px solid #e9ecef;
     }
     
@@ -171,7 +202,31 @@
     
     .tab-content {
       display: none;
+      margin-top: 0; /* Remove top margin */
+      max-height: 60vh;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-gutter: stable both-edges;
     }
+
+    /* Visible custom scrollbar for tab content */
+    .tab-content::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    .tab-content::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 6px;
+    }
+    .tab-content::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 6px;
+    }
+    .tab-content::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+    /* Health table overrides */
+    #health-table th { width: auto; }
     
     .tab-content.active {
       display: block;
@@ -242,20 +297,6 @@
       color: white;
       box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
     }
-    /* Scrollable content inside table cells */
-    .cell-content {
-        max-height: 300px;
-        overflow-y: auto;
-        /* add slight padding for readability */
-        padding-right: 4px;
-    }
-    /* Disable per-row scrollbars */
-    .cell-scroll {
-        overflow: visible;
-        max-height: none;
-        padding-right: 0;
-        white-space: pre-wrap;
-    }
   </style>
 </head>
 <body>
@@ -268,6 +309,19 @@
   </div>
   
   <svg id="world-map"></svg>
+  
+  <!-- Map Legend -->
+  <div id="map-legend" style="position: absolute; top: 80px; left: 20px; background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); font-family: sans-serif; font-size: 14px; z-index: 1000;">
+    <h4 style="margin: 0 0 10px 0; color: #333;">Map Legend</h4>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <div style="width: 20px; height: 20px; background: #4CAF50; border: 2px solid #2E7D32; margin-right: 10px; border-radius: 3px;"></div>
+      <span>Countries with data</span>
+    </div>
+    <div style="display: flex; align-items: center;">
+      <div style="width: 20px; height: 20px; background: #dcdcdc; border: 1px solid #555; margin-right: 10px; border-radius: 3px;"></div>
+      <span>Countries without data</span>
+    </div>
+  </div>
   
   <!-- Country detail view -->
   <div id="country-detail" class="country-detail">
@@ -341,7 +395,7 @@
         "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", 
         "Iceland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Montenegro", 
         "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", 
-        "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "United Kingdom", "United States"
+        "Slovakia", "Slovenia", "Spain", "Sweden", "Turkey", "United Kingdom", "United States of America"
       ],
       eu: [
         "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", 
@@ -351,117 +405,7 @@
       ]
     };
 
-    // Sample country-specific data organized by tabs (replace with real API or data later)
-    const countryData = {
-      "United Kingdom": {
-        share: "2.5%",
-        general: [
-          { metric: "Capital", value: "London" },
-          { metric: "Currency", value: "British Pound" },
-          { metric: "Language", value: "English" },
-          { metric: "Government", value: "Constitutional Monarchy" }
-        ],
-        economy: [
-          { metric: "GDP", value: "$3.1T" },
-          { metric: "GDP per capita", value: "$46,200" },
-          { metric: "Unemployment", value: "4.2%" },
-          { metric: "Inflation", value: "2.1%" }
-        ],
-        demographics: [
-          { metric: "Population", value: "67 million" },
-          { metric: "Population density", value: "275/km²" },
-          { metric: "Median age", value: "40.5 years" },
-          { metric: "Life expectancy", value: "81.2 years" }
-        ],
-        health: [
-          { metric: "Healthcare spending", value: "10.2% of GDP" },
-          { metric: "Doctors per 1000", value: "2.8" },
-          { metric: "Hospital beds per 1000", value: "2.5" },
-          { metric: "COVID-19 cases", value: "24.5M" }
-        ]
-      },
-      "United States": {
-        share: "4.2%",
-        general: [
-          { metric: "Capital", value: "Washington D.C." },
-          { metric: "Currency", value: "US Dollar" },
-          { metric: "Language", value: "English" },
-          { metric: "Government", value: "Federal Republic" }
-        ],
-        economy: [
-          { metric: "GDP", value: "$21.4T" },
-          { metric: "GDP per capita", value: "$64,800" },
-          { metric: "Unemployment", value: "3.7%" },
-          { metric: "Inflation", value: "3.1%" }
-        ],
-        demographics: [
-          { metric: "Population", value: "331 million" },
-          { metric: "Population density", value: "36/km²" },
-          { metric: "Median age", value: "38.5 years" },
-          { metric: "Life expectancy", value: "78.9 years" }
-        ],
-        health: [
-          { metric: "Healthcare spending", value: "18.3% of GDP" },
-          { metric: "Doctors per 1000", value: "2.6" },
-          { metric: "Hospital beds per 1000", value: "2.9" },
-          { metric: "COVID-19 cases", value: "103.4M" }
-        ]
-      },
-      "Germany": {
-        share: "1.1%",
-        general: [
-          { metric: "Capital", value: "Berlin" },
-          { metric: "Currency", value: "Euro" },
-          { metric: "Language", value: "German" },
-          { metric: "Government", value: "Federal Republic" }
-        ],
-        economy: [
-          { metric: "GDP", value: "$4.2T" },
-          { metric: "GDP per capita", value: "$50,800" },
-          { metric: "Unemployment", value: "3.0%" },
-          { metric: "Inflation", value: "2.3%" }
-        ],
-        demographics: [
-          { metric: "Population", value: "83 million" },
-          { metric: "Population density", value: "232/km²" },
-          { metric: "Median age", value: "45.7 years" },
-          { metric: "Life expectancy", value: "81.3 years" }
-        ],
-        health: [
-          { metric: "Healthcare spending", value: "11.7% of GDP" },
-          { metric: "Doctors per 1000", value: "4.2" },
-          { metric: "Hospital beds per 1000", value: "8.0" },
-          { metric: "COVID-19 cases", value: "38.2M" }
-        ]
-      },
-      "France": {
-        share: "0.9%",
-        general: [
-          { metric: "Capital", value: "Paris" },
-          { metric: "Currency", value: "Euro" },
-          { metric: "Language", value: "French" },
-          { metric: "Government", value: "Semi-Presidential Republic" }
-        ],
-        economy: [
-          { metric: "GDP", value: "$2.9T" },
-          { metric: "GDP per capita", value: "$43,600" },
-          { metric: "Unemployment", value: "7.4%" },
-          { metric: "Inflation", value: "2.8%" }
-        ],
-        demographics: [
-          { metric: "Population", value: "67 million" },
-          { metric: "Population density", value: "119/km²" },
-          { metric: "Median age", value: "41.4 years" },
-          { metric: "Life expectancy", value: "82.7 years" }
-        ],
-        health: [
-          { metric: "Healthcare spending", value: "11.1% of GDP" },
-          { metric: "Doctors per 1000", value: "3.3" },
-          { metric: "Hospital beds per 1000", value: "5.9" },
-          { metric: "COVID-19 cases", value: "39.8M" }
-        ]
-      }
-    };
+   
 
     // Load world geoJSON
     d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(worldData => {
@@ -474,22 +418,37 @@
         });
       });
 
-      g.selectAll("path")
-        .data(countries)
-        .enter()
-        .append("path")
-        .attr("d", path)
-        .attr("fill", "#dcdcdc")
-        .attr("stroke", "#555")
-        .on("click", function(event, d) {
-          const countryName = d.properties.name;
-          if (countryData[countryName]) {
+      // Fetch available ISOs and highlight countries with data
+      fetchAvailableIsos().then(availableIsos => {
+        
+        g.selectAll("path")
+          .data(countries)
+          .enter()
+          .append("path")
+          .attr("d", path)
+          .attr("fill", function(d) {
+            // Check if this country has data by comparing ISO codes
+            const countryName = d.properties.name;
+            
+            const hasData = checkIfCountryHasData(countryName, availableIsos);
+            return hasData ? "#4CAF50" : "#dcdcdc"; // Green for countries with data, gray for those without
+          })
+          .attr("stroke", function(d) {
+            const countryName = d.properties.name;
+            const hasData = checkIfCountryHasData(countryName, availableIsos);
+            return hasData ? "#2E7D32" : "#555"; // Darker green for countries with data, dark gray for those without
+          })
+          .attr("stroke-width", function(d) {
+            const countryName = d.properties.name;
+            const hasData = checkIfCountryHasData(countryName, availableIsos);
+            return hasData ? 1.5 : 1; // Thicker border for countries with data
+          })
+          .on("click", function(event, d) {
+            const countryName = d.properties.name;
+            // Always show country detail - data will be fetched dynamically
             showCountryDetail(countryName);
-          } else {
-            // For countries without data, still zoom but show basic info
-            showCountryDetail(countryName, true);
-          }
-        });
+          });
+      });
       
       // Store countries reference for filtering
       window.countries = countries;
@@ -508,37 +467,124 @@
       
       // Update map colors based on organization
       updateMapColors(org, !isActive);
+      
+      // Update legend based on organization filter
+      updateLegend(org, !isActive);
     });
+
+    // Function to update the legend based on active filters
+    function updateLegend(org, show) {
+      const legend = d3.select("#map-legend");
+      
+      if (!show || !org) {
+        // Reset to default legend
+        legend.html(`
+          <h4 style="margin: 0 0 10px 0; color: #333;">Map Legend</h4>
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <div style="width: 20px; height: 20px; background: #4CAF50; border: 2px solid #2E7D32; margin-right: 10px; border-radius: 3px;"></div>
+            <span>Countries with data</span>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="width: 20px; height: 20px; background: #dcdcdc; border: 1px solid #555; margin-right: 10px; border-radius: 3px;"></div>
+            <span>Countries without data</span>
+          </div>
+        `);
+      } else {
+        // Show organization-specific legend
+        const orgName = org === "nato" ? "NATO" : "European Union";
+        const orgColor = org === "nato" ? "#4CAF50" : "#2196F3";
+        const orgBorderColor = org === "nato" ? "#2E7D32" : "#1976D2";
+        
+        legend.html(`
+          <h4 style="margin: 0 0 10px 0; color: #333;">Map Legend</h4>
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <div style="width: 20px; height: 20px; background: ${orgColor}; border: 2px solid ${orgBorderColor}; margin-right: 10px; border-radius: 3px;"></div>
+            <span>${orgName} members</span>
+          </div>
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <div style="width: 20px; height: 20px; background: #FF9800; border: 2px solid #E65100; margin-right: 10px; border-radius: 3px;"></div>
+            <span>Countries with data (not in ${orgName})</span>
+          </div>
+          <div style="display: flex; align-items: center;">
+            <div style="width: 20px; height: 20px; background: #dcdcdc; border: 1px solid #555; margin-right: 10px; border-radius: 3px;"></div>
+            <span>Countries without data</span>
+          </div>
+        `);
+      }
+    }
 
     function updateMapColors(org, show) {
       if (!show || !org) {
-        // Reset to default colors
-        g.selectAll("path")
-          .attr("fill", "#dcdcdc")
-          .attr("stroke", "#555");
+        // Reset to default colors but preserve data highlighting
+        fetchAvailableIsos().then(availableIsos => {
+          g.selectAll("path")
+            .attr("fill", function(d) {
+              const countryName = d.properties.name;
+              const hasData = checkIfCountryHasData(countryName, availableIsos);
+              return hasData ? "#4CAF50" : "#dcdcdc";
+            })
+            .attr("stroke", function(d) {
+              const countryName = d.properties.name;
+              const hasData = checkIfCountryHasData(countryName, availableIsos);
+              return hasData ? "#2E7D32" : "#555";
+            })
+            .attr("stroke-width", function(d) {
+              const countryName = d.properties.name;
+              const hasData = checkIfCountryHasData(countryName, availableIsos);
+              return hasData ? 1.5 : 1;
+            });
+        });
         return;
       }
       
       const memberCountries = organizationData[org];
       
-      g.selectAll("path")
-        .attr("fill", function(d) {
-          const countryName = d.properties.name;
-          if (memberCountries.includes(countryName)) {
-            return org === "nato" ? "#4CAF50" : "#2196F3"; // Green for NATO, Blue for EU
-          }
-          return "#dcdcdc";
-        })
-        .attr("stroke", function(d) {
-          const countryName = d.properties.name;
-          if (memberCountries.includes(countryName)) {
-            return org === "nato" ? "#2E7D32" : "#1976D2"; // Darker green/blue for borders
-          }
-          return "#555";
-        });
+      fetchAvailableIsos().then(availableIsos => {
+        g.selectAll("path")
+          .attr("fill", function(d) {
+            const countryName = d.properties.name;
+            const isMember = memberCountries.includes(countryName);
+            const hasData = checkIfCountryHasData(countryName, availableIsos);
+            
+            if (isMember) {
+              // Organization members get priority colors
+              return org === "nato" ? "#4CAF50" : "#2196F3"; // Green for NATO, Blue for EU
+            } else if (hasData) {
+              // Countries with data but not in organization
+              return "#FF9800"; // Orange for countries with data but not in org
+            } else {
+              // Countries without data and not in organization
+              return "#dcdcdc";
+            }
+          })
+          .attr("stroke", function(d) {
+            const countryName = d.properties.name;
+            const isMember = memberCountries.includes(countryName);
+            const hasData = checkIfCountryHasData(countryName, availableIsos);
+            
+            if (isMember) {
+              return org === "nato" ? "#2E7D32" : "#1976D2"; // Darker green/blue for borders
+            } else if (hasData) {
+              return "#E65100"; // Darker orange for borders
+            } else {
+              return "#555";
+            }
+          })
+          .attr("stroke-width", function(d) {
+            const countryName = d.properties.name;
+            const isMember = memberCountries.includes(countryName);
+            const hasData = checkIfCountryHasData(countryName, availableIsos);
+            
+            if (isMember || hasData) {
+              return 1.5; // Thicker border for highlighted countries
+            } else {
+              return 1;
+            }
+          });
+      });
     }
 
-    function showCountryDetail(countryName, hasData = false) {
+    function showCountryDetail(countryName) {
       // Set country name
       d3.select("#country-name").text(countryName);
       
@@ -766,22 +812,62 @@
           return !isNaN(id) && id >= 7 && id <= 11 && r.id !== "4";
         });
 
-        // Helper to append rows to tbody
-        const addRows = (selection, dataRows, useDHtml = false) => {
+        // Helper to append rows to tbody following index.html rules exactly
+        const addRows = (selection, dataRows, mode) => {
           selection.html("");
           dataRows.forEach(row => {
-            if ((!row.label && !row.text) && (!row.html && !row.dHtml)) return;
+            if ((!row.label && !row.text) && (!row.html && !row.dHtml && !row.dText)) return;
+            // Skip rules to mirror index.html behavior
+            if (mode === 'explainer') {
+              if ((!row.label && !row.text) || row.label === 'National\nCapabilities Map\n& Capability\nDirectory') {
+                return;
+              }
+            }
+            if (mode === 'tracker') {
+              if (String(row.id) === '7') {
+                return;
+              }
+            }
             const tr = selection.append("tr");
-            const labelContent = useDHtml && row.html && row.html.includes('<a') ? row.html : (row.label || row.text || '-');
-            tr.append("td").html(labelContent);
-            const baseHtml = useDHtml ? (row.dHtml || row.dText || row.html || row.text || "-") : (row.html || row.text || "-");
-            tr.append("td").html(baseHtml);
+
+            let labelHtml = "-";
+            let valueHtml = "-";
+
+            if (mode === 'explainer') {
+              // National Capabilities Map rules
+              if (!row.id) {
+                labelHtml = row.html || "";
+                valueHtml = row.dHtml || row.dText || "";
+              } else if (String(row.id) === '6') {
+                labelHtml = row.label || row.text || "-";
+                valueHtml = row.dText || row.text || "-";
+              } else {
+                labelHtml = row.label || row.text || "-";
+                valueHtml = row.html || row.text || "-";
+              }
+            } else if (mode === 'tracker') {
+              // Bioresilience Assessment rules
+              labelHtml = row.label || row.text || "-";
+              valueHtml = row.html || row.text || "-";
+            } else {
+              // Overview (default)
+              labelHtml = row.label || row.text || "-";
+              valueHtml = row.html || row.text || "-";
+              // Special handling for resources row (id 12): split into links
+              if (String(row.id) === '12' && row.text) {
+                const urls = row.text.split('\n').filter(u => u.trim());
+                valueHtml = urls.map(url => `<a href="${url}" target="_blank" rel="noopener noreferrer" style="display: block; margin: 5px 0;">${url}</a>`).join('');
+              }
+            }
+
+            tr.append("th").html(labelHtml);
+            tr.append("td").html(valueHtml);
           });
         };
 
-        addRows(d3.select("#general-data-body"), overviewRows);
-        addRows(d3.select("#economy-data-body"), explainerRows, true);
-        addRows(d3.select("#demographics-data-body"), trackerRows);
+        addRows(d3.select("#general-data-body"), overviewRows, 'overview');
+        addRows(d3.select("#economy-data-body"), explainerRows, 'explainer');
+        addRows(d3.select("#demographics-data-body"), trackerRows, 'tracker');
       } catch (err) {
         console.error('Error populating scorecard tabs:', err);
       }
@@ -791,8 +877,17 @@
       try {
         const res = await fetch(`/.netlify/functions/get-country-data?iso=${iso2}`);
         const data = await res.json();
+        const table = d3.select("#health-table");
+        const thead = table.select("thead");
         const tbody = d3.select("#health-data-body");
         tbody.html("");
+        thead.html("");
+
+        // Build header
+        const headerRow = thead.append("tr");
+        ["Date", "Disease", "Number of Locations", "Report Date"].forEach(h => {
+          headerRow.append("th").text(h);
+        });
 
         if (data && data.outbreaks && data.outbreaks.length) {
           data.outbreaks.forEach(ob => {
@@ -804,11 +899,169 @@
           });
         } else {
           const tr = tbody.append("tr");
-          tr.append("td").attr("colspan", 2).text("No outbreak data available for this country.");
+          tr.append("td").attr("colspan", 4).text("No outbreak data available for this country.");
         }
       } catch (err) {
         console.error('Error populating news tab:', err);
       }
+    }
+
+    // Function to fetch available ISOs from your Netlify function
+    async function fetchAvailableIsos() {
+      try {
+        const response = await fetch('/.netlify/functions/get-available-isos');
+        const data = await response.json();
+        return data.isos || [];
+      } catch (error) {
+        console.error('Error fetching available ISOs:', error);
+        return [];
+      }
+    }
+
+    // Function to check if a country has data by comparing names to available ISOs
+    function checkIfCountryHasData(countryName, availableIsos) {
+      // Create a mapping of country names to ISO codes
+      const countryToIsoMap = {
+        "United States": "USA",
+        "United States of America": "USA",
+        "USA": "USA",
+        "United Kingdom": "GBR", 
+        "UK": "GBR",
+        "Great Britain": "GBR",
+        "Germany": "DEU",
+        "Deutschland": "DEU",
+        "France": "FRA",
+        "Canada": "CAN",
+        "Australia": "AUS",
+        "Japan": "JPN",
+        "Nippon": "JPN",
+        "Italy": "ITA",
+        "Italia": "ITA",
+        "Spain": "ESP",
+        "España": "ESP",
+        "Netherlands": "NLD",
+        "Holland": "NLD",
+        "Switzerland": "CHE",
+        "Schweiz": "CHE",
+        "Sweden": "SWE",
+        "Sverige": "SWE",
+        "Norway": "NOR",
+        "Norge": "NOR",
+        "Denmark": "DNK",
+        "Danmark": "DNK",
+        "Finland": "FIN",
+        "Suomi": "FIN",
+        "Belgium": "BEL",
+        "België": "BEL",
+        "Austria": "AUT",
+        "Österreich": "AUT",
+        "Portugal": "PRT",
+        "Greece": "GRC",
+        "Ελλάδα": "GRC",
+        "Poland": "POL",
+        "Polska": "POL",
+        "Czech Republic": "CZE",
+        "Czechia": "CZE",
+        "Hungary": "HUN",
+        "Magyarország": "HUN",
+        "Slovakia": "SVK",
+        "Slovensko": "SVK",
+        "Slovenia": "SVN",
+        "Slovenija": "SVN",
+        "Croatia": "HRV",
+        "Hrvatska": "HRV",
+        "Romania": "ROU",
+        "România": "ROU",
+        "Bulgaria": "BGR",
+        "България": "BGR",
+        "Estonia": "EST",
+        "Eesti": "EST",
+        "Latvia": "LVA",
+        "Latvija": "LVA",
+        "Lithuania": "LTU",
+        "Lietuva": "LTU",
+        "Ireland": "IRL",
+        "Éire": "IRL",
+        "Luxembourg": "LUX",
+        "Lëtzebuerg": "LUX",
+        "Malta": "MLT",
+        "Cyprus": "CYP",
+        "Κύπρος": "CYP",
+        "Iceland": "ISL",
+        "Ísland": "ISL",
+        "New Zealand": "NZL",
+        "South Korea": "KOR",
+        "Korea": "KOR",
+        "Singapore": "SGP",
+        "Israel": "ISR",
+        "South Africa": "ZAF",
+        "Brazil": "BRA",
+        "Brasil": "BRA",
+        "Argentina": "ARG",
+        "Chile": "CHL",
+        "Mexico": "MEX",
+        "México": "MEX",
+        "India": "IND",
+        "भारत": "IND",
+        "China": "CHN",
+        "中国": "CHN",
+        "Thailand": "THA",
+        "ประเทศไทย": "THA",
+        "Malaysia": "MYS",
+        "Indonesia": "IDN",
+        "Philippines": "PHL",
+        "Pilipinas": "PHL",
+        "Vietnam": "VNM",
+        "Việt Nam": "VNM",
+        "Turkey": "TUR",
+        "Türkiye": "TUR",
+        "Ukraine": "UKR",
+        "Україна": "UKR",
+        "Russia": "RUS",
+        "Россия": "RUS",
+        "Kazakhstan": "KAZ",
+        "Қазақстан": "KAZ",
+        "Uzbekistan": "UZB",
+        "O'zbekiston": "UZB",
+        "Azerbaijan": "AZE",
+        "Azərbaycan": "AZE",
+        "Georgia": "GEO",
+        "საქართველო": "GEO",
+        "Armenia": "ARM",
+        "Հայաստան": "ARM",
+        "Moldova": "MDA",
+        "Belarus": "BLR",
+        "Беларусь": "BLR",
+        "Albania": "ALB",
+        "Shqipëria": "ALB",
+        "North Macedonia": "MKD",
+        "Macedonia": "MKD",
+        "Montenegro": "MNE",
+        "Crna Gora": "MNE",
+        "Serbia": "SRB",
+        "Србија": "SRB",
+        "Bosnia and Herzegovina": "BIH",
+        "Bosna i Hercegovina": "BIH",
+        "Kosovo": "XKX"
+      };
+      
+      // Try exact match first
+      let isoCode = countryToIsoMap[countryName];
+      
+      // If no exact match, try case-insensitive match
+      if (!isoCode) {
+        const lowerCountryName = countryName.toLowerCase();
+        for (const [key, value] of Object.entries(countryToIsoMap)) {
+          if (key.toLowerCase() === lowerCountryName) {
+            isoCode = value;
+            break;
+          }
+        }
+      }
+      
+      const hasData = isoCode ? availableIsos.includes(isoCode) : false;
+      
+      return hasData;
     }
 
     /* ------------------------------------------------------------------ */
