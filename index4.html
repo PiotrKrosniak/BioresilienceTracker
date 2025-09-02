@@ -66,9 +66,16 @@
       }
     };
 
-    document.getElementById('map').addEventListener('pointerdown', () => {
-        if (!window.google) { loadGoogleMapsAPI(); }
-    }, { once: true });
+    
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const mapEl = document.getElementById('map');
+        if (mapEl) {
+            mapEl.addEventListener('pointerdown', () => {
+                if (!window.google) { loadGoogleMapsAPI(); }
+            }, { once: true });
+        }
+    });
 
     // Fullscreen functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -143,6 +150,37 @@
   
   <script type="module" src="news.js"></script>
   <style>
+    /* Organization filter buttons */
+    .org-buttons {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+      z-index: 1002;
+    }
+    .org-button {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid #007bff;
+      border-radius: 20px;
+      color: #007bff;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+    .org-button:hover {
+      background: #007bff;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+    .org-button.active {
+      background: #007bff;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -544,6 +582,11 @@
         <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
       </svg>
     </button>
+  </div>
+  <!-- Organization filter buttons -->
+  <div class="org-buttons">
+    <button class="org-button" data-org="nato">NATO</button>
+    <button class="org-button" data-org="eu">European Union</button>
   </div>
   <div class="map-container">
     <div id="map"></div>

@@ -78,10 +78,9 @@ async function updateOverviewTab() {
     document.getElementById('overview').innerHTML = renderOverviewTab(rows);
 }
 
-async function appendOverviewRowsToTable(iso) {
+async function appendOverviewRowsToTable(iso, preFetchedData = null) {
     try {
-        const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${iso}`);
-        const data = await response.json();
+        const data = preFetchedData || await (await fetch(`/.netlify/functions/get-scorecard-data?iso=${iso}`)).json();
         const rows = data.rows || [];
 
         console.log('All rows:', rows);

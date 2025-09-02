@@ -204,6 +204,43 @@ let map;
 let selectedCountry = null;
 let countriesLayer = null;
 let infoWindow = null;
+let availableIsos = new Set();
+let availableIsosLoaded = false;
+// Simple in-memory cache for scorecard responses by ISO3
+const scorecardCache = new Map();
+
+async function getScorecardData(iso3) {
+    if (scorecardCache.has(iso3)) {
+        return scorecardCache.get(iso3);
+    }
+    // Try sessionStorage for persisted cache
+    try {
+        const cached = sessionStorage.getItem(`scorecard:${iso3}`);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            scorecardCache.set(iso3, parsed);
+            return parsed;
+        }
+    } catch (e) {
+        // ignore storage errors (e.g., private mode)
+    }
+    const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${encodeURIComponent(iso3)}`);
+    if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`Scorecard fetch failed (${response.status}): ${text}`);
+    }
+    const data = await response.json();
+    // Only cache successful, well-formed responses
+    if (data && (Array.isArray(data.rows) || data.countryInfo)) {
+        scorecardCache.set(iso3, data);
+        try {
+            sessionStorage.setItem(`scorecard:${iso3}`, JSON.stringify(data));
+        } catch (e) {
+            // ignore quota/storage errors
+        }
+    }
+    return data;
+}
 
 // Initialize the map
 function initializeMap() {
@@ -293,7 +330,8 @@ function initializeMap() {
                         // Fetch available ISOs from our new endpoint
                         const response = await fetch('/.netlify/functions/get-available-isos');
                         const data = await response.json();
-                        const availableIsos = data.isos || [];
+                        availableIsos = new Set(data.isos || []);
+                        availableIsosLoaded = true;
 
                         countriesLayer.forEach(async (feature) => {
                             const countryId = feature.getId();
@@ -301,7 +339,7 @@ function initializeMap() {
                             if (!countryId) return;
                             
                             // Style countries that have data
-                            if (availableIsos.includes(countryId)) {
+                            if (availableIsos.has(countryId)) {
                                 countriesLayer.overrideStyle(feature, {
                                     fillColor: '#155CC7',
                                     fillOpacity: 0.3,
@@ -331,103 +369,6 @@ function initializeMap() {
 
 // Add event listeners to the map
 function addMapEventListeners() {
-    // Add mouseover event
-    countriesLayer.addListener('mouseover', async (event) => {
-        const countryId = event.feature.getId();
-        const countryName = event.feature.getProperty('name');
-        
-        // Skip if no valid country ID
-        if (!countryId) return;
-
-        try {
-            // First check if scorecard data exists for this country
-            const scorecardResponse = await fetch(`/.netlify/functions/get-scorecard-data?iso=${countryId}`);
-            if (!scorecardResponse.ok) {
-                console.log(`No scorecard data available for ${countryName}`);
-                return;
-            }
-            const scorecardData = await scorecardResponse.json();
-            if (!scorecardData.rows || scorecardData.rows.length === 0) {
-                console.log(`No scorecard data available for ${countryName}`);
-                return;
-            }
-
-            // Compute colors for infographic from scorecard data
-            let pillarColors = ["#f39c12", "#2ecc71", "#3498db", "#e74c3c"]; // default fallback
-            try {
-                const colorRows = (scorecardData.rows || [])
-                    .filter(r => {
-                        const id = parseInt(r.id);
-                        return !isNaN(id) && id >= 8 && id <= 11 && r.color;
-                    })
-                    .sort((a, b) => parseInt(a.id) - parseInt(b.id));
-                if (colorRows.length === 4) {
-                    pillarColors = colorRows.map(r => r.color);
-                }
-            } catch (err) {
-                console.error('Error extracting pillar colors:', err);
-            }
-
-            // Fetch country data
-            const response = await fetch(`https://restcountries.com/v3.1/alpha/${countryId}`);
-            const [countryData] = await response.json();
-            
-            if (countryData) {
-                // Format population with commas
-                const formattedPopulation = countryData.population.toLocaleString();
-                
-                // Format area with commas and km²
-                const formattedArea = countryData.area ? `${countryData.area.toLocaleString()} km²` : '-';
-                
-                // Get capital(s)
-                const capital = countryData.capital ? countryData.capital.join(', ') : '-';
-
-                const content = `
-                <div style="padding: 0; min-width: 200px; min-height: 200px; box-sizing: border-box; overflow: hidden;">
-                    <p style="margin: 0; color: #2c3e50; font-size: 14px; font-weight: bold;">${countryName}</p>
-                    <div id="infographic-${countryId}" style="width: 300px; height: 300px; margin: 0 auto;"></div>
-                </div>
-            `;
-            
-
-                // Get the center of the country's geometry
-                const bounds = new google.maps.LatLngBounds();
-                event.feature.getGeometry().forEachLatLng(latLng => bounds.extend(latLng));
-                const center = bounds.getCenter();
-
-                // Show InfoWindow
-                // infoWindow.setContent(content);
-                // infoWindow.setPosition(center);
-                // infoWindow.open(map);
-                // google.maps.event.addListenerOnce(infoWindow, 'domready', function() {
-                //   setTimeout(() => {
-                //       const iwCloseBtn = document.querySelector('.gm-ui-hover-effect');
-                //       if (iwCloseBtn) {
-                //           iwCloseBtn.style.display = 'none';
-                //       }
-                //   }, 100); // 50ms delay gives browser time to render
-                // });
-              
-               
-
-                // Create pie chart data
-                const pieData = [
-                    { name: 'Population', value: countryData.population },
-                    { name: 'Area', value: countryData.area },
-                    { name: 'Languages', value: Object.keys(countryData.languages || {}).length }
-                ];
-
-                // Create pie chart after InfoWindow is shown
-                setTimeout(() => {
-                    createPieChart(pieData, `pieChart-${countryId}`);
-                    createInfographic(`infographic-${countryId}`, pillarColors);
-                }, 100);
-            }
-        } catch (error) {
-            console.error('Error fetching country data:', error);
-        }
-    });
-
     // Add mouseout event
     countriesLayer.addListener('mouseout', (event) => {
         // infoWindow.close();
@@ -439,11 +380,90 @@ function addMapEventListeners() {
         const countryName = event.feature.getProperty('name');
         if (!countryId) return;
         
+        // Only allow opening details for countries that have data
+        if (!availableIsosLoaded) {
+            console.log('Available country list not loaded yet. Please try again.');
+            return;
+        }
+        if (!availableIsos.has(countryId)) {
+            console.log(`No data available for ${countryName} (${countryId}).`);
+            return;
+        }
+        
         handleCountryClick(null, { 
             properties: { 
                 iso3: countryId,
                 name: countryName
             } 
+        });
+    });
+
+    // Organization buttons handling (NATO / EU)
+    const organizationMembers = {
+        nato: new Set(["ALB","BEL","BGR","CAN","HRV","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN","ISL","ITA","LVA","LTU","LUX","MNE","NLD","MKD","NOR","POL","PRT","ROU","SVK","SVN","ESP","SWE","TUR","GBR","USA"]),
+        eu: new Set(["AUT","BEL","BGR","HRV","CYP","CZE","DNK","EST","FIN","FRA","DEU","GRC","HUN","IRL","ITA","LVA","LTU","LUX","MLT","NLD","POL","PRT","ROU","SVK","SVN","ESP","SWE"])
+    };
+
+    function highlightOrganizationBorders(orgKey, activate) {
+        if (!activate || !orgKey) {
+            // Reset to default styling (keep data-highlight styling applied earlier)
+            countriesLayer.revertStyle();
+            // Re-apply data-available styling
+            countriesLayer.forEach((feature) => {
+                const id = feature.getId();
+                if (availableIsos.has(id)) {
+                    countriesLayer.overrideStyle(feature, {
+                        fillColor: '#155CC7',
+                        fillOpacity: 0.3,
+                        strokeColor: '#DDC709',
+                        strokeWeight: 0.1
+                    });
+                } else {
+                    countriesLayer.overrideStyle(feature, {
+                        fillOpacity: 0
+                    });
+                }
+            });
+            return;
+        }
+
+        const members = organizationMembers[orgKey];
+        const memberStroke = orgKey === 'nato' ? '#2E7D32' : '#1976D2';
+
+        countriesLayer.revertStyle();
+        countriesLayer.forEach((feature) => {
+            const id = feature.getId();
+            const isMember = members.has(id);
+            if (isMember) {
+                countriesLayer.overrideStyle(feature, {
+                    strokeColor: memberStroke,
+                    strokeWeight: 1.2,
+                    fillOpacity: 0.15
+                });
+            } else if (availableIsos.has(id)) {
+                countriesLayer.overrideStyle(feature, {
+                    fillColor: '#155CC7',
+                    fillOpacity: 0.3,
+                    strokeColor: '#DDC709',
+                    strokeWeight: 0.1
+                });
+            } else {
+                countriesLayer.overrideStyle(feature, {
+                    fillOpacity: 0
+                });
+            }
+        });
+    }
+
+    // Wire up buttons
+    const buttons = document.querySelectorAll('.org-button');
+    buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const org = btn.getAttribute('data-org');
+            const isActive = btn.classList.contains('active');
+            document.querySelectorAll('.org-button').forEach(b => b.classList.remove('active'));
+            if (!isActive) btn.classList.add('active');
+            highlightOrganizationBorders(org, !isActive);
         });
     });
 }
@@ -457,11 +477,16 @@ async function handleCountryClick(event, d) {
     
     const countryName = d.properties.name;
     document.getElementById('countryTitle').textContent = countryName;
+    // Show drawer immediately
+    const drawer = document.getElementById('infoDrawer');
+    if (drawer) {
+        drawer.classList.add('open');
+    }
+    
     
     try {
-        // Fetch country data from our scorecard endpoint
-        const response = await fetch(`/.netlify/functions/get-scorecard-data?iso=${encodeURIComponent(d.properties.iso3)}`);
-        const data = await response.json();
+        // Fetch once with caching
+        const data = await getScorecardData(d.properties.iso3);
         
         if (data.countryInfo) {
             // Update the overview tab with country info
@@ -476,9 +501,9 @@ async function handleCountryClick(event, d) {
                 $('#countryFlag').hide();
             }
 
-            // Update overview table with score card rows
+            // Update overview table with pre-fetched score card rows to avoid refetch
             if (window.appendOverviewRowsToTable) {
-                window.appendOverviewRowsToTable(d.properties.iso3);
+                window.appendOverviewRowsToTable(d.properties.iso3, data);
             }
 
             // Update news tab with country-specific data
@@ -493,11 +518,7 @@ async function handleCountryClick(event, d) {
         $('#countryFlag').hide();
     }
     
-    // Show the drawer using classList instead of jQuery
-    const drawer = document.getElementById('infoDrawer');
-    if (drawer) {
-        drawer.classList.add('open');
-    }
+    // Drawer already opened above
 }
 
 // Function to fetch data from Google Sheets
